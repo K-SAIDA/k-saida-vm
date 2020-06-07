@@ -5,6 +5,7 @@ const formatMessage = require('format-message');
 const math = require('mathjs');
 const { KNN } = require('../../lib/ml-knn');
 const { KMEANS } = require('../../lib/ml-kmeans');
+const { convertArrayToCSV } = require('convert-array-to-csv');
 
 const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAABmJLR0QA/wD/AP+gvaeTAAAEm0lEQVRIib2Wf2iVZRTHP+d57t3uvbtjzompTVg5liZRaj9UKhcMAkMixUGGyzKzkAhpahrC8Aet/FVIGSX0wxQbYpRGQSJY5soQDYwpS8Mfmy6d293u3f31vs/TH+9mbnuvGYYHDrzvc875fp/znuc954FbLJLLYBvQmcuRGVhbgeT26x+ExcrJvOE9e6Ua188lkCs2czn6BZZZvUA3LgKZS9FdEJ+dwzxY0puLZiM0/AcaP+TZ+Ytiu/6V0H5cFsp2dzUBZTdFCOeC+aGxsrC159pFNdDL6U7UYnUZVnOTOtpJZRdfN8OejaW3B5RzAojeZHZXIV1R48Kvtp7tW+h3aALYeqz2JZMR9yGFpQC4V/5EKZAhdwDgdLWg2o76hUW0ZQ1QcxWn7yGzoWwyYg7hd5AiJQTnHYD8Qm/bh7cS1EJw0nwAbCZOYmsl+elLfqRWDI8Ga88ehN4aWouIlXfFaBGjGah66jJMJkH7xokkj2xHUDiukDyynfaNE7GpbgJTakln1KBYMVpAv2PrPC4NsLJwzLNYtcjjH6iankSCnl+3UVBZS3hCNc75Y4AQfqAGVTCc7r0rcGOtpNtbEYSAGoQzygaLT6/6vuM3sXXjo07EOQmM8qkceub7UFKOsaCLRhLftw7nvFevQOkEolVLcGMXvNpeaia28yXCQSEUGFgZ2xYImYqAE+Z1rPYhAxk3HRlTSaZpH9a6IEJe+TTIZgDIK5+G23UR58LvIJr8sVXkj59B8vg3YNVA0tucpCwNYPVCPzKCIfS01zCdF8i2HMeNXSTT/BOFT67G/euUR3jnVLq/Wol1MuiiEQRG3k20agmZEwdIZlJ+pAsC4mr/Bmc0FkENGUVB1WIwhti2l+nY9AQmHQcg1bgTNbSUorlbQHk9xHS1IUaD0aTSIEYIBf7pL5Jde/8agTf8knR1iLjRIJqiFz9BDx0NQPLQDgDCU+d4flfOEftwHta44GaxmWQ/HK+mCgtrxdZVRt1g8iTW/9BIzQc48Q7ie95GRUsITa7Gpro9a6iQ1M8NmHg70RlLkUgxsa0vgB08XsJ5uq3ASoUAOKum1CDyqV+WMuIu1Pyt2FTCWwjmkzq8G4DQgzMhm+4lL6Bzy3M4LSf8YFBKni9Z88vHAt6P765+pBF4yM/ZTl+CvvdxYh8twiY6ML3kKlSAFBRTtOA90ke/I/5lvS8ZcGxYfuMkqcNcPS62rnKyAd/WZiNDUK9sQ0Jem00d9EZl6OFqz55O0Ll+Dqb7iu9+tZLHit/88QADwd26qs+wdq5fVHZkBZnocABM+3kvwxKvmZvONpxzTTmSszuGvfXDM31v/aaFyprlRgeewmc8BVtP4TrNJJ1rriotp6+N9uEiqY2sIJeXrN3fgtH1uYZqSAcJ67wbHsJCoL54w/4zOQkBVIz1GP3H/0B6pseJrxuEP3BBNn+bVkYv9xtTfRpWQSIqL6fdU7Vs9KbG5CD8wR/eE7NiVgPW+l71+iTluCQd42faXbJpzyw/Q857qTSrpynnc7Bjscp3Y2EdQFujHOv9XlaMFaWbIpF7voY919vrrZO/AWm1/5xPPIMCAAAAAElFTkSuQmCC';
 
@@ -23,6 +24,7 @@ class Scratch3MachineLearningBlocks {
 
     this.knn_model = undefined;
     this.kmeans_flag = false;
+    this.kmeans_value = undefined;
   }
 
   getInfo() {
@@ -361,7 +363,54 @@ class Scratch3MachineLearningBlocks {
 
   _predictKNN(x_test, util) {
     try {
-      console.log('Predict:', this.knn_model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w)))).map(v => 1 - v));
+
+      x_test = x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w)));
+
+      // csv 파일
+      const filename = `ml_k_means_predict_${new Date().getTime()}.csv`;
+      const csvFromArrayOfObjects = convertArrayToCSV((this.knn_model.predict(x_test).map(v => 1 - v)).map((v, i) => {
+        return {
+          '번호': i + 1,
+          'X 값': x_test[i],
+          'Y 값': v
+        }
+      }));
+
+      // IE 10, 11, Edge Run
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      
+        var blob = new Blob([decodeURIComponent(csvFromArrayOfObjects)], {
+            type: 'text/csv;charset=utf8'
+        });
+      
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+
+      } else if (window.Blob && window.URL) {
+          // HTML5 Blob
+          var blob = new Blob([csvFromArrayOfObjects], { type: 'text/csv;charset=utf8' });
+          var csvUrl = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.setAttribute('style', 'display:none');
+          a.setAttribute('href', csvUrl);
+          a.setAttribute('download', filename);
+          document.body.appendChild(a);
+      
+          a.click()
+          a.remove();
+      } else {
+          // Data URI
+          var csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csvFromArrayOfObjects);
+          var blob = new Blob([csvFromArrayOfObjects], { type: 'text/csv;charset=utf8' });
+          var csvUrl = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.setAttribute('style', 'display:none');
+          a.setAttribute('target', '_blank');
+          a.setAttribute('href', csvData);
+          a.setAttribute('download', filename);
+          document.body.appendChild(a);
+          a.click()
+          a.remove();
+      }
     } catch (e) {
       console.error(e);
       return alert('입력 값이 잘못되었습니다.');
@@ -369,21 +418,39 @@ class Scratch3MachineLearningBlocks {
   }
 
   classifyKMeans(args, util) {
-    this._classifyKMeans(args.DATA, args.GROUP_SIZE, util);
+    return this._classifyKMeans(args.DATA, args.GROUP_SIZE, util);
   }
 
   _classifyKMeans(data, group_size, util) {
     try {
-      this.kmeans_flag = false;
+      this.kmeans_flag = true;
       new KMEANS(data.split(' ').map(v => v.split(',').map(w => parseFloat(w))), { k: parseInt(group_size) }, (err, res) => {
+
         if (err) { 
           console.log(err);
           return alert('입력 값이 잘못되었습니다.');
         }
 
-        console.log('Result:', res);
-        this.kmeans_flag = true;
+        this.kmeans_flag = false;
+        this.kmeans_value = res.map((v, i) => 'Group_' + String(i) + ': [' + v.centroid.map(v => v.toFixed(2)).reduce((prev, cur) => prev + ', ' + cur) + ']').reduce((prev, cur) => prev + '<br />' + cur);
       });
+
+      const promise = new Promise(resolve => {
+        let timer = setInterval(() => {
+          if(this.kmeans_flag == false) {
+            resolve();
+            clearInterval(timer);
+          }
+        }, 1000);
+      });
+
+      return promise.then(() => { 
+        return JSON.stringify({
+          code: 'ml_k_means',
+          data: this.kmeans_value
+        });
+      })
+
     } catch (e) {
       console.error(e);
       return alert('입력 값이 잘못되었습니다.');

@@ -177,7 +177,8 @@ class FeedforwardNueralNetwork {
       onEpochBegin: (epoch) => {
         document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${Math.round(epoch / epochs * 100)}%...`;
       }
-    }]
+    }],
+    validationData: [this.x_train, this.y_train],
   }).then(history => {
     this.info = {
       input: {
