@@ -8,6 +8,8 @@ npm-*
 # Testing
 /.nyc_output
 /coverage
+test.js
+undefined.js
 
 # Editor
 /.idea
