@@ -2,7 +2,6 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 
-const nj = require('@aas395/numjs');
 const { convertArrayToCSV } = require('convert-array-to-csv');
 
 const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAC4jAAAuIwF4pT92AAAHwmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0MzYwLCAyMDIwLzAyLzEzLTAxOjA3OjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdGVEYXRlPSIyMDIwLTA2LTEwVDA4OjQ2OjI0KzA5OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpmNjEzYTdhOS1lMmRiLWIxNDktYTUzYS01ZjM2ODQ1YjgxZjgiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDoxZGRjOTE1Yy02ZjYyLWIzNDktYWI1MS0wZTVmZmE3YmVlY2MiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJzYXZlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0RXZ0OndoZW49IjIwMjAtMDYtMTBUMDg6NDY6NTgrMDk6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4xIChXaW5kb3dzKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY29udmVydGVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJmcm9tIGFwcGxpY2F0aW9uL3ZuZC5hZG9iZS5waG90b3Nob3AgdG8gaW1hZ2UvcG5nIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJkZXJpdmVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJjb252ZXJ0ZWQgZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6ZjYxM2E3YTktZTJkYi1iMTQ5LWE1M2EtNWYzNjg0NWI4MWY4IiBzdEV2dDp3aGVuPSIyMDIwLTA2LTEwVDA4OjQ2OjU4KzA5OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMSAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmUyNjY4MGFjLTQyOWQtZjM0Ni1hMzQzLWU4NDdmZGEyYWMyNyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0UmVmOm9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz5BMx9UAAADGklEQVRo3u2aT0gUURzHLahDRy/dkrx16A+tVphYCUJmVhtd+4OxEFSHjiLFqlS7yeZqrLl5iqIoOnXwIEISruKtDiaFdsxt3VIk8Pjt92N+S8PsbDs783b2LazwgfG98b3vxzdv/ryZOgB1Z58qpZ14T6wSW8IPKWtX2Rdnr1MosJuYJlCEadlXK4Gwg+BWwjoIdBBpF+FzpKUN3wX4EJjyENzKlJvDyo3ALmJAYXArA9JHWQRiZQxuJaZS4AKx7mP4HOvSt2uBPcRcBYJbmZMsJQn0aRDcSp9TgVENw+cYLSYQ8trJuXHgeAxofgQcHTLgbS7jOgUSoUICDV4b7yLOjAHXXwI33wA3XhvwNpdxXZeakWiwCtQT97w2fDoBnBgGVtaQ98NlXMf7KBDgrPVmgSDxUYlAHPiezRfgMq5TJMBZg2aBXrnl9SzQRv/lZZsR4LI2dSPAWXvNAoMqLlb/E+BD6CSNwBGa0IcjxsRulu2W0ic4Zx00C/CtbbasI5ABWiloD03mO++A228NeDv0CuhMlDTBOWvYV4GvP4FDD4Evq/l1S2njNNuZ0F3gQZULHCSBRRsBlmqpCdQEagL+CfBFp/Ux0BT9d8fZRBelY0PGxWpFdwHuqOcFcMtyx3nluSGm9QhwJ3zOXioQhENyWP0F0vZB+GqrvQB3ZndFXayWEdBRgFfEflWRwG/ObBbgR7S1KhLIEHfNAteIz1Uk8Im4ahZoJEacCvC5/lvG/rY4EC38UM91dmcvbovbLEGAszZal1UCjpZOxoCOJ0B4EkjOAvEPBuOzRtmpEaB/0vjdXNcvdWFLXVL+jtvkth0KBAotbEWK/XE3cT5p3Ebso6fS/fcNeJvLgs/c1XGb3c7CR4otLaY0XlpMOVkb3U7MaBh+RrI5Xl6/LK9IKx18S7K4esGxk5ioYPgJyeD5FdMBn+dGSvpU/pJvLzFfxuDz0kfZX7NeJDYUBt+QNn190b2NiCsIPyxtVexTAx7yBRfBF0o5XPz42OMSsekg+Kbsq93XKswOIkosy0PHHyErZVHZR9nnNn8BiZ32ezGmlfkAAAAASUVORK5CYII=';
@@ -19,6 +18,39 @@ const MISSINGVALUE = {
 const SCALINGTYPE = {
   NORMALIZATION: 'normalization',
   STANDARDIZATION: 'standardization', 
+}
+
+const T = (a) => {
+
+  // Calculate the width and height of the Array
+  var w = a.length || 0;
+  var h = a[0] instanceof Array ? a[0].length : 0;
+
+  // In case it is a zero matrix, no transpose routine needed.
+  if(h === 0 || w === 0) { return []; }
+
+  /**
+   * @var {Number} i Counter
+   * @var {Number} j Counter
+   * @var {Array} t Transposed data is stored in this array.
+   */
+  var i, j, t = [];
+
+  // Loop through every item in the outer array (height)
+  for(i=0; i<h; i++) {
+
+    // Insert a new row (array)
+    t[i] = [];
+
+    // Loop through every item per item in outer array (width)
+    for(j=0; j<w; j++) {
+
+      // Save transposed data.
+      t[i][j] = a[j][i];
+    }
+  }
+
+  return t;
 }
 
 class Scratch3BigDataBlocks {
@@ -341,7 +373,7 @@ class Scratch3BigDataBlocks {
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
       const header = this.oArray.slice(0, 1);
-      const tArray = nj.array(this.oArray.slice(1, Infinity).map(row => row.map(value => value == '' ? Infinity : parseFloat(value)))).T.tolist();
+      const tArray = T(this.oArray.slice(1, Infinity).map(row => row.map(value => value == '' ? Infinity : parseFloat(value))));
       const nArray = tArray.map(row => row.map(value => value == Infinity ? 1 : 0).reduce((prev, cur) => prev + cur));
 
       switch (type) {
@@ -350,19 +382,19 @@ class Scratch3BigDataBlocks {
           break;
         case 'mean':
           const meanArray = tArray.map((row, i) => (Math.max.apply(null, row.filter(value => value != Infinity)) + Math.min.apply(null, row.filter(value => value != Infinity))) / 2);
-          this.nArray = header.concat(nj.array(tArray.map((row, i) => row.map(value => value == Infinity ? meanArray[i] : value))).T.tolist().map(row => row.map(value => String(value))));
+          this.nArray = header.concat(T(tArray.map((row, i) => row.map(value => value == Infinity ? meanArray[i] : value))).map(row => row.map(value => String(value))));
           break;
         case 'min':
           const minArray = tArray.map(row => Math.min.apply(null, row.filter(value => value != Infinity)));
-          this.nArray = header.concat(nj.array(tArray.map((row, i) => row.map(value => value == Infinity ? minArray[i] : value))).T.tolist().map(row => row.map(value => String(value))));
+          this.nArray = header.concat(T(tArray.map((row, i) => row.map(value => value == Infinity ? minArray[i] : value))).map(row => row.map(value => String(value))));
           break;
         case 'max':
           const maxArray = tArray.map(row => Math.max.apply(null, row.filter(value => value != Infinity)));
-          this.nArray = header.concat(nj.array(tArray.map((row, i) => row.map(value => value == Infinity ? maxArray[i] : value))).T.tolist().map(row => row.map(value => String(value))));
+          this.nArray = header.concat(T(tArray.map((row, i) => row.map(value => value == Infinity ? maxArray[i] : value))).map(row => row.map(value => String(value))));
           break;
         case 'average':
           const avgArray = tArray.map((row, i) => row.filter(value => value != Infinity).reduce((prev, cur) => prev + cur) / (row.length - nArray[i]));
-          this.nArray = header.concat(nj.array(tArray.map((row, i) => row.map(value => value == Infinity ? avgArray[i] : value))).T.tolist().map(row => row.map(value => String(value))));
+          this.nArray = header.concat(T(tArray.map((row, i) => row.map(value => value == Infinity ? avgArray[i] : value))).map(row => row.map(value => String(value))));
           break;
         case 'delete':
           this.nArray = header.concat(this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] != ''));
@@ -414,16 +446,16 @@ class Scratch3BigDataBlocks {
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const header = this.nArray.slice(0, 1);
-      const tArray = nj.array(this.nArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).T.tolist();
+      const tArray = T(this.nArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value))));
 
       switch (type) {
         case 'normalization':
-          this.sArray = header.concat(nj.array(tArray.map(row => row.map(value => (value - Math.min.apply(null, row)) / (Math.max.apply(null, row) - Math.min.apply(null, row))))).T.tolist().map(row => row.map(value => value.toFixed(5))));
+          this.sArray = header.concat(T(tArray.map(row => row.map(value => (value - Math.min.apply(null, row)) / (Math.max.apply(null, row) - Math.min.apply(null, row))))).map(row => row.map(value => value.toFixed(5))));
           break;
         case 'standardization':
           const avg = tArray.map(row => (row.reduce((prev, cur) => prev + cur) / row.length));
           const standard_deviation = tArray.map((row, i) => Math.sqrt(row.map(value => Math.pow(value - avg[i], 2)).reduce((prev, cur) => prev + cur) / row.length));
-          this.sArray = header.concat(nj.array(tArray.map((row, i) => row.map(value => (value - avg[i]) / standard_deviation[i]))).T.tolist().map(row => row.map(value => value.toFixed(5))));
+          this.sArray = header.concat(T(tArray.map((row, i) => row.map(value => (value - avg[i]) / standard_deviation[i]))).map(row => row.map(value => value.toFixed(5))));
           break;
         }
 
@@ -450,8 +482,8 @@ class Scratch3BigDataBlocks {
       const tempArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
 
       const headers = tempArray.slice(0, 1)[0];
-      const tArray = nj.array(tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).T.tolist();
-      const rArray = nj.array([headers.map((h, i) => h == header ? tArray[i] : null).filter(row => row != null)[0]]).T.tolist();
+      const tArray = T(tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value))));
+      const rArray = T([headers.map((h, i) => h == header ? tArray[i] : null).filter(row => row != null)[0]]);
 
       console.log('Get column list:', header, rArray);
 
@@ -631,7 +663,7 @@ class Scratch3BigDataBlocks {
       else
         this.dArray = tArray.filter((row, i) => i != (parseInt(index) - 1));
 
-      console.log('Delete row:', (headers) ? this.sArray : this.dArray);
+      console.log('Delete row:', (!this.dArray) ? this.sArray : this.dArray);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -654,7 +686,7 @@ class Scratch3BigDataBlocks {
       const tempArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
       const headers = (this.dArray) ? undefined: [tempArray.slice(0, 1)[0].filter((header, i) => i != (parseInt(index) - 1))];
 
-      const rArray = nj.array(nj.array((!headers) ? tempArray.map(row => row.map(value => parseFloat(value))) : tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).T.tolist().filter((row, i) => i != (parseInt(index) - 1))).T.tolist();
+      const rArray = T(T((!headers) ? tempArray.map(row => row.map(value => parseFloat(value))) : tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).filter((row, i) => i != (parseInt(index) - 1)));
       
       if (headers)
         this.sArray = headers.concat(rArray).map(row => row.map(value => String(value)));
