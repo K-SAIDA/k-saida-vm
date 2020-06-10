@@ -125,7 +125,7 @@ class FeedforwardNueralNetwork {
   if (!this.x_train || !this.y_train || !(this.model || this.customModel) || !this.optimizer || !this.loss)
     return new Error('해당 블록은 predict(x_pred) 블록 바로 전에만 올 수 있습니다.');
 
-  this.trainFlag = true;
+  this.waitBlockFlag = true;
 
   switch (metrics) {
     case 'bianryAccuracy':
@@ -192,7 +192,7 @@ class FeedforwardNueralNetwork {
       shuffle: shuffle,
       history: history
     }
-    this.trainFlag = false;
+    this.waitBlockFlag = false;
   });
  }
 

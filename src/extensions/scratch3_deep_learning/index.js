@@ -70,16 +70,6 @@ class Scratch3DeepLearningBlocks {
 
   constructor(runtime) {
     this.runtime = runtime;
-
-    /**
-     * 유저가 선언한 모델
-     */
-    this.model;
-    
-    /**
-     * 유저가 선언한 함수
-     */
-    this.predict;
   }
 
   getInfo() {
@@ -259,6 +249,15 @@ class Scratch3DeepLearningBlocks {
               defaultValue: ' ',
             }
           }
+        },
+        {
+          opcode: 'getPredict',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'deepLearning.getPredict',
+            default: 'get predicted data using ffnn',
+            description: 'get predicted data using ffnn'
+          })
         }
       ],
       menus: {
@@ -269,6 +268,19 @@ class Scratch3DeepLearningBlocks {
         SHUFFLE: this.SHUFFLE_MENU,
       }
     };
+  }
+
+  promise(callback) {
+    const promise = new Promise((resolve, reject) => {
+      let timer = setInterval(() => {
+        if(!this.model || this.model.waitBlockFlag == false) {
+          resolve(callback(reject));
+          clearInterval(timer);
+        }
+      }, 1000);
+    });
+
+    return promise.then((res) => res).catch(res => res.error ? console.error(res.message) : alert(res.message));
   }
 
   createFFNN(args, util) {
@@ -702,31 +714,33 @@ class Scratch3DeepLearningBlocks {
   }
 
   _trainModel(batch_size, epochs, shuffle, util) {
-
     try {
       document.body.children[4].children[0].children[3].style.display = 'flex';
       return this.model.trainModel(parseInt(batch_size), parseInt(epochs), shuffle == 'active')
       .then(() =>  {
         document.body.children[4].children[0].children[3].style.display = 'none';
+        const data = [
+          {
+            name: '손실율',
+            values: {
+              x: this.model.info.history.epoch,
+              y: this.model.info.history.history.loss
+            }
+          },
+          {
+            name: '정확도',
+            values: {
+              x: this.model.info.history.epoch,
+              y: this.model.info.history.history.acc
+            }
+          }
+        ];
+
+        console.log('Train:', data);
         return JSON.stringify({
           code: 'dl_fnn_train',
-          data: [
-            {
-              name: '손실율',
-              values: {
-                x: this.model.info.history.epoch,
-                y: this.model.info.history.history.loss
-              }
-            },
-            {
-              name: '정확도',
-              values: {
-                x: this.model.info.history.epoch,
-                y: this.model.info.history.history.acc
-              }
-            }
-          ]
-        })
+          data: data
+        });
       });
     }
     catch (e) {
@@ -737,69 +751,35 @@ class Scratch3DeepLearningBlocks {
   }
 
   predict(args, util) {
-    this._predict(args.X_TEST, util);
+    this.promise((reject) => this._predict(args.X_TEST, util, reject));
   }
 
-  _predict(x_test, util) {
+  _predict(x_test, util, reject) {
     try {
-      x_test = x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w)));
-      return new Promise(resolve => {
-        let timer = setInterval(() => {
-          if(this.model.trainFlag == false) {
-            resolve();
-            clearInterval(timer);
+      if (!this.model)
+        return reject({ error: false, message: '학습된 모델이 존재하지 않습니다.' });
 
-            // csv 파일
-            const filename = `dl_fnn_predict_${new Date().getTime()}.csv`;
-            const csvFromArrayOfObjects = convertArrayToCSV(this.model.predict(x_test).map((v, i) => {
-              return {
-                '번호': i + 1,
-                'X 값': x_test[i].toString(),
-                'Y 값': v
-              }
-            }));
-
-            // IE 10, 11, Edge Run
-            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-            
-              var blob = new Blob([decodeURIComponent(csvFromArrayOfObjects)], {
-                  type: 'text/csv;charset=utf8'
-              });
-            
-              window.navigator.msSaveOrOpenBlob(blob, filename);
-
-            } else if (window.Blob && window.URL) {
-                // HTML5 Blob
-                var blob = new Blob([csvFromArrayOfObjects], { type: 'text/csv;charset=utf8' });
-                var csvUrl = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.setAttribute('style', 'display:none');
-                a.setAttribute('href', csvUrl);
-                a.setAttribute('download', filename);
-                document.body.appendChild(a);
-            
-                a.click()
-                a.remove();
-            } else {
-                // Data URI
-                var csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csvFromArrayOfObjects);
-                var blob = new Blob([csvFromArrayOfObjects], { type: 'text/csv;charset=utf8' });
-                var csvUrl = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.setAttribute('style', 'display:none');
-                a.setAttribute('target', '_blank');
-                a.setAttribute('href', csvData);
-                a.setAttribute('download', filename);
-                document.body.appendChild(a);
-                a.click()
-                a.remove();
-            }
-          }
-        }, 1000);
-      });
+      this.predict_value = this.model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))));
+      console.log('Predict FFNN:', this.predict_value);
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getPredict(args, util) {
+    return this.promise((reject) => this._getPredict(util, reject));
+  }
+
+  _getPredict(util, reject) {
+    try {
+      if (!this.predict_value)
+        return reject({ error: false, message: '예측된 데이터가 없습니다.' });
+
+      return (typeof this.predict_value == 'number') ? String(this.predict_value) : this.predict_value.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
     }
   }
 }

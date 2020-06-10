@@ -23,8 +23,7 @@ class Scratch3MachineLearningBlocks {
     this.runtime = runtime;
 
     this.knn_model = undefined;
-    this.kmeans_flag = false;
-    this.kmeans_value = undefined;
+    this.waitBlockFlag = false;
   }
 
   getInfo() {
@@ -146,12 +145,12 @@ class Scratch3MachineLearningBlocks {
           }
         },
         {
-          opcode: 'getNumberOfArrayAtIndex',
+          opcode: 'getRowOfArrayAtIndex',
           blockType: BlockType.REPORTER,
           text: formatMessage({
-            id: 'machineLearning.getNumberOfArrayAtIndex',
-            default: 'Array [ARRAY] at index [INDEX]',
-            description: 'sum of list'
+            id: 'machineLearning.getRowOfArrayAtIndex',
+            default: 'row of array [ARRAY] at index [INDEX]',
+            description: 'row of array at index'
           }),
           arguments: {
             ARRAY: {
@@ -162,6 +161,21 @@ class Scratch3MachineLearningBlocks {
               type: ArgumentType.STRING,
               defaultValue: ' '
             }
+          }
+        },
+        {
+          opcode: 'getRowSizeOfArray',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'machineLearning.getRowSizeOfArray',
+            default: 'row size of array [ARRAY]',
+            description: 'row size of array'
+          }),
+          arguments: {
+            ARRAY: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
           }
         },
         {
@@ -199,6 +213,15 @@ class Scratch3MachineLearningBlocks {
           }
         },
         {
+          opcode: 'getPredictKNN',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'machineLearning.getPredictKNN',
+            default: 'get predicted data using knn',
+            description: 'get predicted data using knn'
+          })
+        },
+        {
           opcode: 'classifyKMeans',
           blockType: BlockType.COMMAND,
           text: formatMessage({
@@ -217,9 +240,31 @@ class Scratch3MachineLearningBlocks {
             }
           }
         },
+        {
+          opcode: 'getClassifyKMeans',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'machineLearning.getClassifyKMeans',
+            default: 'get classified data using k-means',
+            description: 'get classified data using k-means'
+          })
+        },
       ],
       menus: {}
     };
+  }
+
+  promise(callback) {
+    const promise = new Promise((resolve, reject) => {
+      let timer = setInterval(() => {
+        if(this.waitBlockFlag == false) {
+          resolve(callback(reject));
+          clearInterval(timer);
+        }
+      }, 1000);
+    });
+
+    return promise.then((res) => res).catch(res => res.error ? console.error(res.message) : alert(res.message));
   }
 
   operatorAdd(args, util) {
@@ -330,14 +375,28 @@ class Scratch3MachineLearningBlocks {
     }
   }
 
-  getNumberOfArrayAtIndex(args, util) {
-    return this._getNumberOfArrayAtIndex(args.ARRAY, args.INDEX, util);
+  getRowOfArrayAtIndex(args, util) {
+    return this._getRowOfArrayAtIndex(args.ARRAY, args.INDEX, util);
   }
 
-  _getNumberOfArrayAtIndex(array, index, util) {
+  _getRowOfArrayAtIndex(array, index, util) {
     try {
       const Array = (typeof array == 'string') ? array.split(' ').map(v => v.split(',').map(w => parseFloat(w))) : array;
       return String((Array.length == 1 && Array[0].length == 1) ? Array[0][0] : Array.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur)))[parseInt(index) - 1]);
+    } catch (e) {
+      console.error(e);
+      return alert('입력 값이 잘못되었습니다.');
+    }
+  }
+
+  getRowSizeOfArray(args, util) {
+    return this._getRowSizeOfArray(args.ARRAY, util);
+  }
+
+  _getRowSizeOfArray(array, util) {
+    try {
+      const Array = (typeof array == 'string') ? array.split(' ').map(v => v.split(',').map(w => parseFloat(w))) : array;
+      return String((Array.length == 1 && Array[0].length == 1) ? 1 : Array.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).length);
     } catch (e) {
       console.error(e);
       return alert('입력 값이 잘못되었습니다.');
@@ -358,62 +417,33 @@ class Scratch3MachineLearningBlocks {
   }
 
   predictKNN(args, util) {
-    this._predictKNN(args.X_TEST, util);
+    return this._predictKNN(args.X_TEST, util);
   }
 
   _predictKNN(x_test, util) {
     try {
+      this.knn_value = [this.knn_model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w)))).map(v => 1 - v)];
 
-      x_test = x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w)));
-
-      // csv 파일
-      const filename = `ml_k_means_predict_${new Date().getTime()}.csv`;
-      const csvFromArrayOfObjects = convertArrayToCSV((this.knn_model.predict(x_test).map(v => 1 - v)).map((v, i) => {
-        return {
-          '번호': i + 1,
-          'X 값': x_test[i],
-          'Y 값': v
-        }
-      }));
-
-      // IE 10, 11, Edge Run
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-      
-        var blob = new Blob([decodeURIComponent(csvFromArrayOfObjects)], {
-            type: 'text/csv;charset=utf8'
-        });
-      
-        window.navigator.msSaveOrOpenBlob(blob, filename);
-
-      } else if (window.Blob && window.URL) {
-          // HTML5 Blob
-          var blob = new Blob([csvFromArrayOfObjects], { type: 'text/csv;charset=utf8' });
-          var csvUrl = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.setAttribute('style', 'display:none');
-          a.setAttribute('href', csvUrl);
-          a.setAttribute('download', filename);
-          document.body.appendChild(a);
-      
-          a.click()
-          a.remove();
-      } else {
-          // Data URI
-          var csvData = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csvFromArrayOfObjects);
-          var blob = new Blob([csvFromArrayOfObjects], { type: 'text/csv;charset=utf8' });
-          var csvUrl = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.setAttribute('style', 'display:none');
-          a.setAttribute('target', '_blank');
-          a.setAttribute('href', csvData);
-          a.setAttribute('download', filename);
-          document.body.appendChild(a);
-          a.click()
-          a.remove();
-      }
+      console.log('Predict KNN:', this.knn_value);
     } catch (e) {
       console.error(e);
       return alert('입력 값이 잘못되었습니다.');
+    }
+  }
+
+  getPredictKNN(args, util) {
+    return this._getPredictKNN(util);
+  }
+
+  _getPredictKNN(util) {
+    try {
+      if (!this.knn_value)
+        return alert('예측된 KNN 데이터가 없습니다.');
+
+      return (typeof this.knn_value == 'number') ? String(this.knn_value) : this.knn_value.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      console.error(e);
     }
   }
 
@@ -423,37 +453,37 @@ class Scratch3MachineLearningBlocks {
 
   _classifyKMeans(data, group_size, util) {
     try {
-      this.kmeans_flag = true;
+      this.waitBlockFlag = true;
       new KMEANS(data.split(' ').map(v => v.split(',').map(w => parseFloat(w))), { k: parseInt(group_size) }, (err, res) => {
-
         if (err) { 
           console.log(err);
           return alert('입력 값이 잘못되었습니다.');
         }
 
-        this.kmeans_flag = false;
-        this.kmeans_value = res.map((v, i) => 'Group_' + String(i) + ': [' + v.centroid.map(v => v.toFixed(2)).reduce((prev, cur) => prev + ', ' + cur) + ']').reduce((prev, cur) => prev + '<br />' + cur);
+        this.waitBlockFlag = false;
+        this.kmeans_value = res.map((v) => v.centroid);
+
+        console.log('Classify K-Means:', this.kmeans_value);
       });
-
-      const promise = new Promise(resolve => {
-        let timer = setInterval(() => {
-          if(this.kmeans_flag == false) {
-            resolve();
-            clearInterval(timer);
-          }
-        }, 1000);
-      });
-
-      return promise.then(() => { 
-        return JSON.stringify({
-          code: 'ml_k_means',
-          data: this.kmeans_value
-        });
-      })
-
     } catch (e) {
       console.error(e);
       return alert('입력 값이 잘못되었습니다.');
+    }
+  }
+
+  getClassifyKMeans(args, util) {
+    return this.promise((reject) => this._getClassifyKMeans(util, reject));
+  }
+
+  _getClassifyKMeans(util, reject) {
+    try {
+      if (!this.kmeans_value)
+        return reject({ error: false, message: '분류된 K-Means 데이터가 없습니다.' });
+
+      return (typeof this.kmeans_value == 'number') ? String(this.kmeans_value) : this.kmeans_value.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
     }
   }
 }

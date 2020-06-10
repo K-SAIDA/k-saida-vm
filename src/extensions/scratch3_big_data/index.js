@@ -3,8 +3,9 @@ const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 
 const nj = require('@aas395/numjs');
+const { convertArrayToCSV } = require('convert-array-to-csv');
 
-const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAGWWlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0MzYwLCAyMDIwLzAyLzEzLTAxOjA3OjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjEuMSAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDIwLTA2LTA5VDExOjU3OjU2KzA5OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMC0wNi0wOVQxMjoxMDo0NiswOTowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMC0wNi0wOVQxMjoxMDo0NiswOTowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpjMGNiZDdhNy0wYTc0LWExNGEtYThkNC0yYjRiYmQ4MzUyZGQiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDpmZjM0MGJlMi0xZWQ5LTQwNDktYTdhYi04YWUxZjM1YjZkNTEiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDpjMzMyYjE3NS03MGVlLWQwNDYtOTFlYy1mMTBhNzk3NGNiZTYiPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjcmVhdGVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOmMzMzJiMTc1LTcwZWUtZDA0Ni05MWVjLWYxMGE3OTc0Y2JlNiIgc3RFdnQ6d2hlbj0iMjAyMC0wNi0wOVQxMTo1Nzo1NiswOTowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDIxLjEgKFdpbmRvd3MpIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJjb252ZXJ0ZWQiIHN0RXZ0OnBhcmFtZXRlcnM9ImZyb20gYXBwbGljYXRpb24vdm5kLmFkb2JlLnBob3Rvc2hvcCB0byBpbWFnZS9wbmciLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOmMwY2JkN2E3LTBhNzQtYTE0YS1hOGQ0LTJiNGJiZDgzNTJkZCIgc3RFdnQ6d2hlbj0iMjAyMC0wNi0wOVQxMjoxMDo0NiswOTowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDIxLjEgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PtT5YRgAAAXfSURBVHja7ZvPaxVXFMefqT9i6yISa0htjJofGy0iUiUJSWgirrQiiggBF/4BsUJSYi22IlS6qWm7kBQ3BjcqtIsEwWKhKv4gGCrtIiYBKdQ2C6sVTIy/8j7dfIeeXmbezEsmk5e8HLgkc+6Zc8983517zzn3TApI5XObqYGXAoeAy2ofiZc3ADQBV/iPfhIvLwCoJZhq5zoAC4C+DAD0SWbOAlBAOBXMZQB2RwBgz1wEYC3QRXTq0j2zHoBC4Bgwbh7uB+Cxz0M/Vp9H48Bx6ZiVAOwDhs0D3dUqvxF46gPAU/XVAr8Z/rB0zRoA3gd6zAP8DbSa/vviXwdG1K6Ld9/Itepejy5Jd84C8A5wxvlVTwMrjczn4j8ANgH/qG0SD8l48iuB7xydZzRWTgHQCjwxRv4I1DkyJUBa/TvF8yglHpIpce6tk06PnjizasYA+BDoN4YNaKvzk+01Mh4gHnkPPKDr3gAde4Ehc1+/bJhWAMqAVQ5vo3kg71c7BiwO0NFgZOvFqza8avHqDe+DAF1LNFbayPbKJtfusqkA0KggBWBCUdt24KjzTnYDVSEDebvBBcOrNDoqDf+CeEMhOqs0tqWjsvGyE2g1ZwtATQRn5YJjeFA7LPkRx81dbnQtd9zlEfHbIuivBM5HsLc+KgB7gZshyr7USrwYWA1U+LQ1wBbgue7pBFaob63CX4+axKuQTKf4r6RjTcAYq2VDKXAyxOZ+oCUKAN2a8kH0CvhdfzPRc+d6PAtXeDxE12RsSgPn4gAAYBR4mKHfvf8l2dPLEJ2WHsomQmw6GwWAfcDtEGW/ALuAt4BivYfValWasoOSvWz4nkwlsM3o2+ajo9osZoPS6eoolg27ZFMmuuXnUmdaBNMBU82jR8ARYKHP/TuNXHnAGEVGpihAptzI7PTpXygbHgXYaKku222wHvjZAeIF8Jmmkn0d2kwmp9BEeydCVm+/bdBtJ0y0WGgyS23OtO8GPnXWi7SeoWGyjlCREB0FrknpVfXtN9Mc4Fftwd/q+k9gUQwALJIupHu7xrLe537JXhXvJjAm24um4gm+q8VjHHjPGPKx2bM7gGc+U25LhP07CgAp6XJpTGN7M++I+H8AG2TzhJ5h0gCsNatvCthhDCh13tVvHAO/zvD+ZwNAuXRZ6nTc3FLTt8sEWhNhmaVsAHhbvHu67nFktwbs558EZHrLQxbKBbrXz3/YGhBoDep6xXQAUOnjJjeK96aJ57+S723f03vAAUd3sekvdvpaDNDe+tIs3V4+Yak5ZPGoxsQJsQOwzvAvOgFLu9kal5n1od1Jf91Q1LbZLFjewrpZfTecNFm7iSGWmS2vQzxvIf7e2LduugEo0ZboZXD/0v8HAzJFp3zcUkJ4pwIyPwdNcNVl9v6SJAFI6RewdCdE1wYzczLRRclm0nXHJwxOJQ1AyhxzjQPrI4SubwRsmR49k0yYnvVmcezz6Z8HIN9egY6kAXAXwZEZXgRfJL0IXnQcj44Z3AaHktoG/RyhJlPyEqcjdCALR6gxKUfIdYV7I7jCo07Akq0r3BGQ6XFd4Z4kXOFMwVCZSWTaYKgshmCoLMtgaEecwZAbDnvT/IjzK43NYDhc4ITDD2RrLOFwWEJkICQhsiSBhMigT0LkmmyeUkKkIYaU2BcJpsTOyrYXPimx+mwBqMuQf88mKZrOkaRo2uwQkdLit+ZgWvx21LT42Tl8MNIdBYBzAa7qbD8aiwxAi1P04EcntfdO9+Ho8xgPR2/q4DfSIlgf4Vc6n8Dx+OEYj8drst0Gm02BBCEFEhXTUCAxHKKzIqRAYsIUSDQyxRIZ16XdyP9LZF4Tf4lM0HHWYo312sj6lcisYoolMrlYJLXb8T4TKZKaL5OL2KarUPK0ozMnCyXdUtlLxuC4SmV7yPFS2TiLpe8a/qwrlnbL5Y8z+XL5Y8zicvn5DyZ82p4ID787SZvmP5pKGIC8/2wu7z+cDPp09gp59Oms38fTh8izj6dzpv0LiBTIneRM48oAAAAASUVORK5CYII=';
+const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAC4jAAAuIwF4pT92AAAHwmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0MzYwLCAyMDIwLzAyLzEzLTAxOjA3OjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdGVEYXRlPSIyMDIwLTA2LTEwVDA4OjQ2OjI0KzA5OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpmNjEzYTdhOS1lMmRiLWIxNDktYTUzYS01ZjM2ODQ1YjgxZjgiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDoxZGRjOTE1Yy02ZjYyLWIzNDktYWI1MS0wZTVmZmE3YmVlY2MiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJzYXZlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0RXZ0OndoZW49IjIwMjAtMDYtMTBUMDg6NDY6NTgrMDk6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4xIChXaW5kb3dzKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY29udmVydGVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJmcm9tIGFwcGxpY2F0aW9uL3ZuZC5hZG9iZS5waG90b3Nob3AgdG8gaW1hZ2UvcG5nIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJkZXJpdmVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJjb252ZXJ0ZWQgZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6ZjYxM2E3YTktZTJkYi1iMTQ5LWE1M2EtNWYzNjg0NWI4MWY4IiBzdEV2dDp3aGVuPSIyMDIwLTA2LTEwVDA4OjQ2OjU4KzA5OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMSAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmUyNjY4MGFjLTQyOWQtZjM0Ni1hMzQzLWU4NDdmZGEyYWMyNyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0UmVmOm9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz5BMx9UAAADGklEQVRo3u2aT0gUURzHLahDRy/dkrx16A+tVphYCUJmVhtd+4OxEFSHjiLFqlS7yeZqrLl5iqIoOnXwIEISruKtDiaFdsxt3VIk8Pjt92N+S8PsbDs783b2LazwgfG98b3vxzdv/ryZOgB1Z58qpZ14T6wSW8IPKWtX2Rdnr1MosJuYJlCEadlXK4Gwg+BWwjoIdBBpF+FzpKUN3wX4EJjyENzKlJvDyo3ALmJAYXArA9JHWQRiZQxuJaZS4AKx7mP4HOvSt2uBPcRcBYJbmZMsJQn0aRDcSp9TgVENw+cYLSYQ8trJuXHgeAxofgQcHTLgbS7jOgUSoUICDV4b7yLOjAHXXwI33wA3XhvwNpdxXZeakWiwCtQT97w2fDoBnBgGVtaQ98NlXMf7KBDgrPVmgSDxUYlAHPiezRfgMq5TJMBZg2aBXrnl9SzQRv/lZZsR4LI2dSPAWXvNAoMqLlb/E+BD6CSNwBGa0IcjxsRulu2W0ic4Zx00C/CtbbasI5ABWiloD03mO++A228NeDv0CuhMlDTBOWvYV4GvP4FDD4Evq/l1S2njNNuZ0F3gQZULHCSBRRsBlmqpCdQEagL+CfBFp/Ux0BT9d8fZRBelY0PGxWpFdwHuqOcFcMtyx3nluSGm9QhwJ3zOXioQhENyWP0F0vZB+GqrvQB3ZndFXayWEdBRgFfEflWRwG/ObBbgR7S1KhLIEHfNAteIz1Uk8Im4ahZoJEacCvC5/lvG/rY4EC38UM91dmcvbovbLEGAszZal1UCjpZOxoCOJ0B4EkjOAvEPBuOzRtmpEaB/0vjdXNcvdWFLXVL+jtvkth0KBAotbEWK/XE3cT5p3Ebso6fS/fcNeJvLgs/c1XGb3c7CR4otLaY0XlpMOVkb3U7MaBh+RrI5Xl6/LK9IKx18S7K4esGxk5ioYPgJyeD5FdMBn+dGSvpU/pJvLzFfxuDz0kfZX7NeJDYUBt+QNn190b2NiCsIPyxtVexTAx7yBRfBF0o5XPz42OMSsekg+Kbsq93XKswOIkosy0PHHyErZVHZR9nnNn8BiZ32ezGmlfkAAAAASUVORK5CYII=';
 
 const MISSINGVALUE = {
   ZERO: 'zero',
@@ -33,8 +34,7 @@ class Scratch3BigDataBlocks {
 
   constructor(runtime) {
     this.runtime = runtime;
-    this.oArray;
-    this.nArray;
+    this.waitBlockFlag = false;
   }
 
   getInfo() {
@@ -90,119 +90,133 @@ class Scratch3BigDataBlocks {
             }
           }
         },
-        //컬럼필터
         {
-          opcode: 'columnfilter',
+          opcode: 'deleteHeader',
           blockType: BlockType.COMMAND,
           text: formatMessage({
-            id: 'bigData.columnfilter',
-            default: 'select column [COLUMN]',
-            description: 'select column'
+            id: 'bigData.deleteHeader',
+            default: 'delete column header',
+            description: 'delete column header'
+          })
+        },
+        {
+          opcode: 'deleteRow',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.deleteRow',
+            default: 'delete row at [INDEX]',
+            description: 'delete row at index'
           }),
-          arguments: {//수정
-            COLUMN: {
+          arguments: {
+            INDEX: {
               type: ArgumentType.STRING,
-              defaultValue: '원하는 열 리스트'
+              defaultValue: ' '
             }
           }
         },
-        //로컬 저장
+        {
+          opcode: 'deleteColumn',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.deleteColumn',
+            default: 'delete column at [INDEX]',
+            description: 'delete column at index'
+          }),
+          arguments: {
+            INDEX: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getRowList',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getRowList',
+            default: '[INDEX] row of data',
+            description: 'row of data'
+          }),
+          arguments: {
+            INDEX: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getColumnList',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getColumnList',
+            default: 'select column [HEADER]',
+            description: 'select column'
+          }),
+          arguments: {
+            HEADER: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getValue',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getValue',
+            default: '[INDEX] row and [HEADER] column of data',
+            description: 'row and column of data'
+          }),
+          arguments: {
+            HEADER: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            INDEX: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getHeaders',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getHeaders',
+            default: 'column headers',
+            description: 'column headers'
+          })
+        },
+        {
+          opcode: 'getRowLength',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getRowLength',
+            default: 'size of rows',
+            description: 'size of rows'
+          })
+        },
+        {
+          opcode: 'getColumnLength',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getColumnLength',
+            default: 'size of columns',
+            description: 'size of columns'
+          })
+        },
         {
           opcode: 'saveLocal',
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'bigData.saveLocal',
-            default: 'save [FILE] on local PC',
+            default: 'save on local PC',
             description: 'save file on local PC'
           }),
-          arguments: {//수정
+          arguments: {
             FILE: {
               type: ArgumentType.STRING,
-              defaultValue: '전처리 완료된 파일 명'
-            }
-          }
-        },
-        //지정행을 추출하여 리스트에 저장
-        {
-          opcode: 'selectrow',
-          blockType: BlockType.REPORTER,
-          text: formatMessage({
-            id: 'bigData.selectrow',
-            default: '[ROW] row of data',
-            description: '[ROW] row of data'
-          }),
-          arguments: {//데이터 행 
-            ROW: {
-              type: ArgumentType.NUMBER,
-              defaultValue: '행 번호'
-            }
-          }
-        },
-
-       
-        //행 갯수
-        {
-          opcode: 'rowlength',
-          blockType: BlockType.REPORTER,
-          text: formatMessage({
-            id: 'bigData.rowlength',
-            default: 'rowlength',
-            description: 'rowlength'
-          }),
-          // arguments: {//데이터 행 
-
-          // }
-        },
-        //열 갯수
-        {
-          opcode: 'collength',
-          blockType: BlockType.REPORTER,
-          text: formatMessage({
-            id: 'bigData.collength',
-            default: 'collength',
-            description: 'collength'
-          }),
-          // arguments: {//데이터 행 
-
-          // }
-        },
-        //컬럼명
-        {
-          opcode: 'colname',
-          blockType: BlockType.REPORTER,
-          text: formatMessage({
-            id: 'bigData.colname',
-            default: 'colname',
-            description: 'colname'
-          }),
-          // arguments: {//데이터 행 
-          // }
-        },
-        //헤더 삭제
-        {
-          opcode: 'deleteheader',
-          blockType: BlockType.COMMAND,
-          text: formatMessage({
-            id: 'bigData.deleteheader',
-            default: 'deleteheader',
-            description: 'deleteheader'
-          }),
-          // arguments: {//데이터 행 
-          // }
-        },
-        //행삭제
-        {
-          opcode: 'deleterow',
-          blockType: BlockType.COMMAND,
-          text: formatMessage({
-            id: 'bigData.deleterow',
-            default: 'delete [ROW]',
-            description: 'delete [ROW]'
-          }),
-          arguments: {//데이터 행 
-            ROW: {
-              type: ArgumentType.NUMBER,
-              defaultValue: '행 번호'
+              defaultValue: ' '
             }
           }
         },
@@ -212,6 +226,19 @@ class Scratch3BigDataBlocks {
         SCALINGTYPE: this.SCALINGTYPE_MENU,
       }
     };
+  }
+
+  promise(callback) {
+    const promise = new Promise((resolve, reject) => {
+      let timer = setInterval(() => {
+        if(this.waitBlockFlag == false) {
+          resolve(callback(reject));
+          clearInterval(timer);
+        }
+      }, 1000);
+    });
+
+    return promise.then((res) => res).catch(res => res.error ? console.error(res.message) : alert(res.message));
   }
 
   loadCSV(args, util) {
@@ -304,14 +331,14 @@ class Scratch3BigDataBlocks {
   }
 
   missingValue(args, util) {
-    this._missingValue(args.MISSINGVALUE, util);
+    this.promise((reject) => this._missingValue(args.MISSINGVALUE, util, reject));
   }
 
-  _missingValue(type, util) {
+  _missingValue(type, util, reject) {
     try {
 
       if (!this.oArray)
-        return alert('loadCSV로 데이터를 먼저 불러와주세요.');
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
       const header = this.oArray.slice(0, 1);
       const tArray = nj.array(this.oArray.slice(1, Infinity).map(row => row.map(value => value == '' ? Infinity : parseFloat(value)))).T.tolist();
@@ -345,7 +372,7 @@ class Scratch3BigDataBlocks {
       console.log('Missing Value:', this.nArray);
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
   
@@ -374,17 +401,17 @@ class Scratch3BigDataBlocks {
   }
 
   scale(args, util) {
-    this._scale(args.SCALINGTYPE, util);
+    this.promise((reject) => this._scale(args.SCALINGTYPE, util, reject));
   }
 
-  _scale(type, util) {
+  _scale(type, util, reject) {
     try {
 
       if (!this.oArray)
-        return alert('loadCSV로 데이터를 먼저 불러와주세요.');
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
       if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return alert('누락된 데이터값을 먼저 처리해주세요.');
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const header = this.nArray.slice(0, 1);
       const tArray = nj.array(this.nArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).T.tolist();
@@ -403,521 +430,301 @@ class Scratch3BigDataBlocks {
       console.log('Scaling:', this.sArray);
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
 
-  columnfilter(args, util) {
-    console.log("columnfilter입성")
+  getColumnList(args, util) {
+    return this.promise((reject) => this._getColumnList(args.HEADER, util, reject));
+  }
+
+  _getColumnList(header, util, reject) {
     try {
 
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      return new Promise(resolve => {
-        console.log(1);
-        let timer = setInterval(() => {
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-          // if문 만족할 때까지 반복하며 로깅
-          console.log(2, this.waitBlockFlag);
-          if (this.waitBlockFlag === false) {
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
-            console.log(3);
-            resolve();
-            clearInterval(timer);
+      const tempArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
 
-            // waitBlockFlag가 내려갔으므로, 해당 블록의 작업을 진행한다.
-            // 해당 부분에 처리하고자 하는 이후 작업 명시
-            console.log('waitBlock 작업이 완료되어서 해당 블록 작업을 진행합니다.')
-            //리스트로 받은 컬럼 리스틀를 각배열에 저장
-            let columns = [];
-            let csvstring;
+      const headers = tempArray.slice(0, 1)[0];
+      const tArray = nj.array(tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).T.tolist();
+      const rArray = nj.array([headers.map((h, i) => h == header ? tArray[i] : null).filter(row => row != null)[0]]).T.tolist();
 
-            columns = args.COLUMN.split(' ').map(v => v.split(','));
-            console.log(columns);
+      console.log('Get column list:', header, rArray);
 
-            console.log(columns.length);
-
-            //컬럼 리스트 항목을 각 인덱스로 저장하여 배열에 재저장
-            // let colindex = [];
-            for (let index = 0; index < columns.length; index++) {
-              for (let a = 0; a < this.array[0].length; a++) {
-                // const element = array[index];
-
-                if (columns[index] == this.array[0][a]) {
-                  console.log("헤더확인 : " + this.array[0][a]);
-                  if (index == ((columns.length) - 1)) {
-                    //마지막 쉼표 안붙이기 
-                    csvstring = csvstring + this.array[0][a];
-                  }
-                  else if (index == 0) {
-                    //첫번째 값의 경우
-                    csvstring = this.array[0][a];
-                    csvstring = csvstring + ',';
-                  }
-                  else {
-                    //중간값들
-                    let s = this.array[0][a];
-                    s = s + ',';
-                    csvstring = csvstring + s;
-                  }
-
-
-                  // colindex.push(a);
-                  columns[index] = a;
-                }
-              }
-            }
-            csvstring = csvstring + '\n'
-            columns.sort(function (a, b) { return a - b; });
-            console.log("컬럼 인덱스" + columns);
-            console.log("csv형태 : " + csvstring);
-
-            console.log(this.array);
-            for (let index = 1; index < this.array.length; index++) {
-              for (let s = 0; s < columns.length; s++) {
-                if (s == (columns.length - 1)) {
-                  //마지막 쉼표 붙이기 용
-                  csvstring = csvstring + this.array[index][columns[s]];
-                  console.log(this.array[index][columns[s]]);
-
-                  console.log(csvstring);
-                }
-                else {
-                  //값들
-                  let str = this.array[index][columns[s]];
-                  console.log(this.array[index][columns[s]]);
-
-                  str = str + ',';
-                  csvstring = csvstring + str;
-                  console.log(csvstring);
-                }
-              }
-
-              csvstring = csvstring + '\n'
-            }
-            // this.array = newdata;
-            // console.log("컬럼필터완료 : " + this.array);
-            console.log("최종 csv : " + csvstring);
-
-            csvstring = csvstring.replace(/\r/g, ''); //data인 문자열에서 \r을 찾아 지움(개행문자 제거하기)
-            let row;
-            row = csvstring.split('\n'); //data를 \n를 기준으로 자름
-            //배열에 넣기 
-            // this.array = [];
-            let array = [];
-            for (var i = 0; i < row.length - 1; i++) {
-              let col = [];
-              col = row[i].split(",");
-              array.push(col);
-            }
-            console.log("csv를 배열로 변환 : " + array);
-            this.array = array;
-
-            console.log(this.array.length);
-            console.log(this.array[0].length);
-
-          }
-        }, 1000);
-      });
-
+      if (!rArray[0])
+        return alert(`올바르지 않은 헤더입니다. (값: ${header})`);
+      
+      return (typeof rArray == 'number') ? String(rArray) : rArray.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
+  }
 
+  getRowList(args, util) {
+    return this.promise((reject) => this._getRowList(args.INDEX, util, reject));
+  }
+
+  _getRowList(index, util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      const rArray = [tArray[parseInt(index) - 1]];
+
+      if (rArray == [])
+        return reject({ error: false, message: `올바르지 않은 행 번호입니다. (값: ${index})` });
+
+      console.log('Get row list:', rArray[0]);
+      return (typeof rArray == 'number') ? String(rArray) : rArray.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getValue(args, util) {
+    return this.promise((reject) => this._getValue(args.HEADER, args.INDEX, util, reject));
+  }
+
+  _getValue(header, index, util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      const result = tArray.slice(0, 1)[0].map((h, i) => h == header ? tArray.slice(1, Infinity).map((row, j) => j == (parseInt(index) - 1) ? row[i] : null) : null).filter(row => row != null)[0].filter(value => value != null)[0];
+      
+      if (!result)
+        return reject({ error: false, message: `열 이름 또는 행 번호가 잘못되었습니다.` });
+
+      console.log('Get value:', result);
+      return String(result);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getRowLength(args, util) {
+    return this.promise((reject) => this._getRowLength(util, reject));
+  }
+
+  _getRowLength(util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      return String(tArray.length);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getColumnLength(args, util) {
+    return this.promise((reject) => this._getColumnLength(util, reject));
+  }
+
+  _getColumnLength(util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      return String(tArray[0].length);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getHeaders(args, util) {
+    return this.promise((reject) => this._getHeaders(util, reject));
+  }
+
+  _getHeaders(util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      if (this.dArray)
+        return reject({ error: false, message: '헤더를 찾을 수 없습니다.' });
+
+      const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      return [tArray[0]].map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  deleteHeader(args, util) {
+    this.promise((reject) => this._deleteHeader(util, reject));
+  }
+
+  _deleteHeader(util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      if (this.dArray)
+        return reject({ error: false, message: '헤더를 찾을 수 없습니다.' });
+
+      const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      this.dArray = tArray.slice(1, Infinity);
+
+      console.log('Delete header:', this.dArray);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  deleteRow(args, util) {
+    this.promise((reject) => this._deleteRow(args.INDEX, util, reject));
+  }
+
+  _deleteRow(index, util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+
+      if (this.dArray)
+        this.sArray = tArray.filter((row, i) => i != (parseInt(index) - 1));
+      else
+        this.dArray = tArray.filter((row, i) => i != (parseInt(index) - 1));
+
+      console.log('Delete row:', (headers) ? this.sArray : this.dArray);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  deleteColumn(args, util) {
+    this.promise((reject) => this._deleteColumn(args.INDEX, util, reject));
+  }
+
+  _deleteColumn(index, util, reject) {
+    try {
+
+      if (!this.oArray)
+        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+
+      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+
+      const tempArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      const headers = (this.dArray) ? undefined: [tempArray.slice(0, 1)[0].filter((header, i) => i != (parseInt(index) - 1))];
+
+      const rArray = nj.array(nj.array((!headers) ? tempArray.map(row => row.map(value => parseFloat(value))) : tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).T.tolist().filter((row, i) => i != (parseInt(index) - 1))).T.tolist();
+      
+      if (headers)
+        this.sArray = headers.concat(rArray).map(row => row.map(value => String(value)));
+      else
+        this.dArray = rArray.map(row => row.map(value => String(value)));
+
+      console.log('Delete column:', (headers) ? this.sArray : this.dArray);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
   }
 
   saveLocal(args, util) {
-
-
-    console.log("saveLocal입성")
-    try {
-
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      return new Promise(resolve => {
-        console.log(1);
-        let timer = setInterval(() => {
-
-          // if문 만족할 때까지 반복하며 로깅
-          console.log(2, this.waitBlockFlag);
-          if (this.waitBlockFlag === false) {
-
-            console.log(3);
-            resolve();
-            clearInterval(timer);
-
-            // waitBlockFlag가 내려갔으므로, 해당 블록의 작업을 진행한다.
-            // 해당 부분에 처리하고자 하는 이후 작업 명시
-            console.log('waitBlock 작업이 완료되어서 해당 블록 작업을 진행합니다.')
-            console.log(this.array);
-            // let a_txt = this.array.join("\n"); //join : 배열의 원소를 연결해 문자열로 생성
-            let filename = args.FILE;
-            filename = filename + '.csv';
-            // console.log(a_txt);
-            console.log(filename);
-            let csvContent = this.array.map(e => e.join(",")).join("\n");
-            console.log(csvContent);
-
-            (function () {
-              const BLOB = new Blob(
-                ['\ufeff' + csvContent],
-                { type: 'text/csv;charset=EUC-KR;' }
-              );
-              const ENCODED_URL = URL.createObjectURL(BLOB);
-              const link = document.createElement("a");
-              link.setAttribute("href", ENCODED_URL);
-              link.setAttribute("download", filename);
-              // document.body.appendChild(link); // Required for FF
-
-              link.click(); // This will download the data file named "my_data.csv".
-            })();
-
-            // var encodedUri = encodeURI(csvContent);
-
-
-          }
-        }, 1000);
-      });
-
-    }
-    catch (e) {
-      alert(e)
-    }
-
+    this.promise((reject) => this._saveLocal(args.FILE, util, reject));
   }
 
-  getNumberOfArrayAtIndex(args, util) {
-
-  }
-
-  graph(args, util) {
-    console.log("LOADIMAG입성")
+  _saveLocal(file, util, reject) {
     try {
 
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      return new Promise(resolve => {
-        console.log(1);
-        let timer = setInterval(() => {
-
-          // if문 만족할 때까지 반복하며 로깅
-          console.log(2, this.waitBlockFlag);
-          if (this.waitBlockFlag === false) {
-
-            console.log(3);
-            resolve();
-            clearInterval(timer);
-
-            // waitBlockFlag가 내려갔으므로, 해당 블록의 작업을 진행한다.
-            // 해당 부분에 처리하고자 하는 이후 작업 명시
-            console.log('waitBlock 작업이 완료되어서 해당 블록 작업을 진행합니다.')
-            console.log(this.data);
-
-
-          }
-        }, 1000);
-      });
-
-    }
-    catch (e) {
-      alert(e)
-    }
-
-  }
-
-
-
-
-  selectrow(args, util) {
-    console.log("selectrow입성")
-
-    try {
-
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      if (this.waitBlockFlag === true) {
-        return new Promise(resolve => {
-          console.log(1);
-          let timer = setInterval(() => {
-
-            // if문 만족할 때까지 반복하며 로깅
-            console.log(2, this.waitBlockFlag);
-            if (this.waitBlockFlag === false) {
-
-              // console.log(3);
-              resolve();
-              clearInterval(timer);
-
-            }
-          }, 1000);
-        });
-      }
-
-      let datarow = [];
-
-      //행에 해당하는 데이터를 저장
-      for (var i = 0; i < this.array.length; i++) {
-        for (var j = 0; j < this.array[0].length; j++) {
-          if ((args.ROW - 1) == i) {
-            datarow.push(this.array[i][j]);
-            // this.send.push(this.array[i][j]);
-          }
-        }
-      }
-  
-      String(datarow);
-    
-      return String(datarow);
-    }
-
-
-
-    catch (e) {
-      alert(e)
-    }
-
-  }
-
-
-
-
-  rowlength(args, util) {
-    console.log("rowlength입성")
-
-    try {
-
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      if (this.waitBlockFlag === true) {
-        return new Promise(resolve => {
-          console.log(1);
-          let timer = setInterval(() => {
-
-            // if문 만족할 때까지 반복하며 로깅
-            console.log(2, this.waitBlockFlag);
-            if (this.waitBlockFlag === false) {
-
-              // console.log(3);
-              resolve();
-              clearInterval(timer);
-
-            }
-          }, 1000);
-        });
-      }
-
-      return this.array.length;
-    }
-
-
-
-    catch (e) {
-      alert(e)
-    }
-
-
-  }
-
-
-  collength(args, util) {
-    console.log("collength입성")
-
-    try {
-      let collength = 0;
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      if (this.waitBlockFlag === true) {
-
-        return new Promise(resolve => {
-          console.log(1);
-          let timer = setInterval(() => {
-
-            // if문 만족할 때까지 반복하며 로깅
-            console.log(2, this.waitBlockFlag);
-            if (this.waitBlockFlag === false) {
-
-              // console.log(3);
-              resolve();
-              clearInterval(timer);
-
-            }
-          }, 1000);
-        });
-      }
-      else if (this.array != 0) {
-        collength = this.array[0].length;
-
-      }
-      return collength;
-    }
-
-
-
-    catch (e) {
-      alert(e)
-    }
-
-
-  }
-
-
-
-  colname(args, util) {
-    console.log("colname입성")
-
-    try {
-      let colname = [];
-      let string = "";
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      if (this.waitBlockFlag === true) {
-
-        return new Promise(resolve => {
-          console.log(1);
-          let timer = setInterval(() => {
-
-            // if문 만족할 때까지 반복하며 로깅
-            console.log(2, this.waitBlockFlag);
-            if (this.waitBlockFlag === false) {
-
-              // console.log(3);
-              resolve();
-              clearInterval(timer);
-
-            }
-          }, 1000);
-        });
-      }
-
-
-
-
-
-
-      else if (this.array != 0) {
-
-        //헤더를 저장
-        for (var j = 0; j < this.array[0].length; j++) {
-          colname.push(this.array[0][j]);
-        }
-
-        string = String(colname);
-
-
-      }
-
-      return string;
-    }
-
-
-
-    catch (e) {
-      alert(e)
-    }
-
-
-  }
-
-
-
-  deleteheader(args, util) {
-    console.log("deleteheader입성")
-    // this.flag ;
-
-    try {
-
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-     
-        return new Promise(resolve => {
-          console.log(1);
-          let timer = setInterval(() => {
-
-            // if문 만족할 때까지 반복하며 로깅
-            console.log(2, this.waitBlockFlag);
-            if (this.waitBlockFlag === false) {
-
-              // console.log(3);
-              resolve();
-              clearInterval(timer);
-
-
-
-
-              
-              this.array.splice(0, 1);
-              console.log(this.array);
-
-
-
-            }
-          }, 1000);
+      if (!this.oArray)
+        return reject({ error: false, message: '저장할 데이터가 없습니다.' });
+
+      // csv 파일
+      const filename = `big_data_${new Date().getTime()}.csv`;
+      const tempArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
+      const csvFromArrayOfArrays  = convertArrayToCSV(tempArray);
+
+      console.log(csvFromArrayOfArrays);
+
+      // IE 10, 11, Edge Run
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      
+        var blob = new Blob([decodeURIComponent('\ufeff' + csvFromArrayOfArrays)], {
+            type: 'text/csv;charset=uft8'
         });
       
-     
+        window.navigator.msSaveOrOpenBlob(blob, filename);
 
-
-
+      } else if (window.Blob && window.URL) {
+          // HTML5 Blob
+          var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
+          var csvUrl = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.setAttribute('style', 'display:none');
+          a.setAttribute('href', csvUrl);
+          a.setAttribute('download', filename);
+          document.body.appendChild(a);
+      
+          a.click()
+          a.remove();
+      } else {
+          // Data URI
+          var csvData = 'data:application/csv;charset=uft8,' + encodeURIComponent(csvFromArrayOfArrays);
+          var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
+          var csvUrl = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.setAttribute('style', 'display:none');
+          a.setAttribute('target', '_blank');
+          a.setAttribute('href', csvData);
+          a.setAttribute('download', filename);
+          document.body.appendChild(a);
+          a.click()
+          a.remove();
+      }
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
-
-
   }
-
-  deleterow(args, util) {
-
-    console.log("deleterow입성")
-
-    try {
-
-      // waitBlockFlag가 내려갈 때까지 계속 대기한다.
-      
-        return new Promise(resolve => {
-          console.log(1);
-          let timer = setInterval(() => {
-
-            // if문 만족할 때까지 반복하며 로깅
-            console.log(2, this.waitBlockFlag);
-            if (this.waitBlockFlag === false) {
-
-              // console.log(3);
-              resolve();
-              clearInterval(timer);
-
-
-
-              let rownumber;
-              rownumber = args.ROW-1;
-              this.array.splice(rownumber, 1);
-              console.log(this.array);
-
-
-
-
-            }
-          }, 1000);
-        });
-      
-
-
-
-
-
-    }
-
-
-
-    catch (e) {
-      alert(e)
-    }
-
-
-  }
-
-
-
-
-
 }
-
-
-
-
-
 
 module.exports = Scratch3BigDataBlocks; 
