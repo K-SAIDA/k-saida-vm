@@ -67,6 +67,8 @@ class Scratch3BigDataBlocks {
   constructor(runtime) {
     this.runtime = runtime;
     this.waitBlockFlag = false;
+
+    this.data = {};
   }
 
   getInfo() {
@@ -181,11 +183,11 @@ class Scratch3BigDataBlocks {
           blockType: BlockType.REPORTER,
           text: formatMessage({
             id: 'bigData.getColumnList',
-            default: 'select column [HEADER]',
-            description: 'select column'
+            default: '[INDEX] column of data',
+            description: 'column of data'
           }),
           arguments: {
-            HEADER: {
+            INDEX: {
               type: ArgumentType.STRING,
               defaultValue: ' '
             }
@@ -196,15 +198,15 @@ class Scratch3BigDataBlocks {
           blockType: BlockType.REPORTER,
           text: formatMessage({
             id: 'bigData.getValue',
-            default: '[INDEX] row and [HEADER] column of data',
+            default: '[ROWINDEX] row and [COLUMNINDEX] column of data',
             description: 'row and column of data'
           }),
           arguments: {
-            HEADER: {
+            ROWINDEX: {
               type: ArgumentType.STRING,
               defaultValue: ' '
             },
-            INDEX: {
+            COLUMNINDEX: {
               type: ArgumentType.STRING,
               defaultValue: ' '
             }
@@ -442,7 +444,7 @@ class Scratch3BigDataBlocks {
       if (!this.oArray)
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+      if (!this.nArray && this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const header = this.nArray.slice(0, 1);
@@ -467,29 +469,28 @@ class Scratch3BigDataBlocks {
   }
 
   getColumnList(args, util) {
-    return this.promise((reject) => this._getColumnList(args.HEADER, util, reject));
+    return this.promise((reject) => this._getColumnList(args.INDEX, util, reject));
   }
 
-  _getColumnList(header, util, reject) {
+  _getColumnList(index, util, reject) {
     try {
 
       if (!this.oArray)
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+      if (!this.nArray && this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const tempArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
 
-      const headers = tempArray.slice(0, 1)[0];
-      const tArray = T(tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value))));
-      const rArray = T([headers.map((h, i) => h == header ? tArray[i] : null).filter(row => row != null)[0]]);
-
-      console.log('Get column list:', header, rArray);
-
-      if (!rArray[0])
-        return alert(`올바르지 않은 헤더입니다. (값: ${header})`);
+      const tArray = (this.dArray) ? T(tempArray.map(row => row.map(value => parseFloat(value)))) : T(tempArray.slice(1, Infinity).map(row => row.map(value => parseFloat(value))));
       
+      if (parseInt(index) - 1 >= tArray.length)
+        return alert(`오류: 배열의 참조 범위를 초과했습니다. (값: ${index}})\n블록 위치: 열 가져오기`);
+      
+      const rArray = T(tArray[parseInt(index) - 1]);
+
+      console.log('Get column list:', index, rArray);
       return (typeof rArray == 'number') ? String(rArray) : rArray.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     }
     catch (e) {
@@ -507,14 +508,14 @@ class Scratch3BigDataBlocks {
       if (!this.oArray)
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+      if (!this.nArray && this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
       const rArray = [tArray[parseInt(index) - 1]];
 
       if (rArray == [])
-        return reject({ error: false, message: `올바르지 않은 행 번호입니다. (값: ${index})` });
+        return reject({ error: false, message: `오류: 올바르지 않은 행 번호입니다. (값: ${index})\n블록 위치: 행 가져오기` });
 
       console.log('Get row list:', rArray[0]);
       return (typeof rArray == 'number') ? String(rArray) : rArray.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
@@ -525,10 +526,10 @@ class Scratch3BigDataBlocks {
   }
 
   getValue(args, util) {
-    return this.promise((reject) => this._getValue(args.HEADER, args.INDEX, util, reject));
+    return this.promise((reject) => this._getValue(args.ROWINDEX, args.COLUMNINDEX, util, reject));
   }
 
-  _getValue(header, index, util, reject) {
+  _getValue(row_index, column_index, util, reject) {
     try {
 
       if (!this.oArray)
@@ -538,10 +539,10 @@ class Scratch3BigDataBlocks {
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
-      const result = tArray.slice(0, 1)[0].map((h, i) => h == header ? tArray.slice(1, Infinity).map((row, j) => j == (parseInt(index) - 1) ? row[i] : null) : null).filter(row => row != null)[0].filter(value => value != null)[0];
+      const result = tArray.map((row, i) => (i == parseInt(row_index) - 1) ? row.map((column, j) => (j == parseInt(column_index) - 1) ? column : null) : null).filter(row => row != null)[0].filter(value => value != null)[0];
       
       if (!result)
-        return reject({ error: false, message: `열 이름 또는 행 번호가 잘못되었습니다.` });
+        return reject({ error: false, message: `오류: 열 이름 또는 행 번호가 잘못되었습니다.\n블록 위치: 값 가져오기` });
 
       console.log('Get value:', result);
       return String(result);
@@ -582,7 +583,7 @@ class Scratch3BigDataBlocks {
       if (!this.oArray)
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+      if (!this.nArray && this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
@@ -627,7 +628,7 @@ class Scratch3BigDataBlocks {
       if (!this.oArray)
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+      if (!this.nArray && this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       if (this.dArray)
@@ -653,12 +654,12 @@ class Scratch3BigDataBlocks {
       if (!this.oArray)
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+      if (!this.nArray && this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const tArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
 
-      if (this.dArray)
+      if (!this.dArray)
         this.sArray = tArray.filter((row, i) => i != (parseInt(index) - 1));
       else
         this.dArray = tArray.filter((row, i) => i != (parseInt(index) - 1));
@@ -680,7 +681,7 @@ class Scratch3BigDataBlocks {
       if (!this.oArray)
         return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
 
-      if (!this.nArray && this.oArray.filter(row => row.filter(value => value == '')[0] == '').length != 0)
+      if (!this.nArray && this.oArray.slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
 
       const tempArray = (this.dArray) ? this.dArray : ((this.sArray) ? this.sArray : (this.nArray ? this.nArray : this.oArray));
