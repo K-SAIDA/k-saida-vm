@@ -741,7 +741,11 @@ class Scratch3DeepLearningBlocks {
           code: 'dl_fnn_train',
           data: data
         });
-      });
+      })
+      .catch((err) => {
+        console.error(err);
+        document.body.children[4].children[0].children[3].style.display = 'none';
+      })
     }
     catch (e) {
       document.body.children[4].children[0].children[3].style.display = 'none';
