@@ -782,30 +782,30 @@ class Scratch3BigDataBlocks {
         window.navigator.msSaveOrOpenBlob(blob, filename);
 
       } else if (window.Blob && window.URL) {
-          // HTML5 Blob
-          var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
-          var csvUrl = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.setAttribute('style', 'display:none');
-          a.setAttribute('href', csvUrl);
-          a.setAttribute('download', filename);
-          document.body.appendChild(a);
+        // HTML5 Blob
+        var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
+        var csvUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('href', csvUrl);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
       
-          a.click()
-          a.remove();
+        a.click()
+        a.remove();
       } else {
-          // Data URI
-          var csvData = 'data:application/csv;charset=uft8,' + encodeURIComponent(csvFromArrayOfArrays);
-          var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
-          var csvUrl = URL.createObjectURL(blob);
-          var a = document.createElement('a');
-          a.setAttribute('style', 'display:none');
-          a.setAttribute('target', '_blank');
-          a.setAttribute('href', csvData);
-          a.setAttribute('download', filename);
-          document.body.appendChild(a);
-          a.click()
-          a.remove();
+        // Data URI
+        var csvData = 'data:application/csv;charset=uft8,' + encodeURIComponent(csvFromArrayOfArrays);
+        var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
+        var csvUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('target', '_blank');
+        a.setAttribute('href', csvData);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click()
+        a.remove();
       }
     }
     catch (e) {

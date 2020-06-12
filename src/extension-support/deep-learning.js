@@ -6,6 +6,20 @@ class FeedforwardNueralNetwork {
     this.test;
   }
 
+  import(event) {
+    return tf.loadLayersModel(
+      tf.io.browserFiles(
+      [
+        (event.target.files[0].name.split('.json').length == 2) ? event.target.files[0] : event.target.files[1], 
+        (event.target.files[1].name.split('.bin').length == 2) ? event.target.files[1] : event.target.files[0],
+      ]
+    ));
+  }
+
+  export(file) {
+    return this.model.save(`downloads://${file}`);
+  }
+
   setTrainData(x_train, y_train) {
     this.x_train = tf.tensor2d(x_train);
     this.y_train = tf.tensor2d(y_train);
@@ -125,8 +139,6 @@ class FeedforwardNueralNetwork {
   if (!this.x_train || !this.y_train || !(this.model || this.customModel) || !this.optimizer || !this.loss)
     return new Error('해당 블록은 predict(x_pred) 블록 바로 전에만 올 수 있습니다.');
 
-  this.waitBlockFlag = true;
-
   switch (metrics) {
     case 'bianryAccuracy':
       this.metrics = tf.metrics.binaryAccuracy;
@@ -192,7 +204,6 @@ class FeedforwardNueralNetwork {
       shuffle: shuffle,
       history: history
     }
-    this.waitBlockFlag = false;
   });
  }
 

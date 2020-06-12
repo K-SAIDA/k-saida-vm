@@ -70,6 +70,7 @@ class Scratch3DeepLearningBlocks {
 
   constructor(runtime) {
     this.runtime = runtime;
+    this.waitBlockFlag = false;
   }
 
   getInfo() {
@@ -85,10 +86,10 @@ class Scratch3DeepLearningBlocks {
       }),
       blocks: [
         {
-          opcode: 'createFFNN',
+          opcode: 'createModel',
           blockType: BlockType.COMMAND,
           text: formatMessage({
-            id: 'deepLearning.createFFNN',
+            id: 'deepLearning.createModel',
             default: 'create feedforward neural network',
             description: 'create feedforward neural network'
           })
@@ -258,6 +259,39 @@ class Scratch3DeepLearningBlocks {
             default: 'get predicted data using ffnn',
             description: 'get predicted data using ffnn'
           })
+        },
+        {
+          opcode: 'savePredict',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.savePredict',
+            default: 'save predicted data',
+            description: 'save predicted data'
+          })
+        },
+        {
+          opcode: 'importModel',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.importModel',
+            default: 'import model',
+            description: 'import model'
+          })
+        },
+        {
+          opcode: 'exportModel',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.exportModel',
+            default: 'export model to [FILE]',
+            description: 'export model'
+          }),
+          arguments: {
+            FILE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            }
+          }
         }
       ],
       menus: {
@@ -273,7 +307,7 @@ class Scratch3DeepLearningBlocks {
   promise(callback) {
     const promise = new Promise((resolve, reject) => {
       let timer = setInterval(() => {
-        if(!this.model || this.model.waitBlockFlag == false) {
+        if(this.waitBlockFlag == false) {
           resolve(callback(reject));
           clearInterval(timer);
         }
@@ -283,26 +317,35 @@ class Scratch3DeepLearningBlocks {
     return promise.then((res) => res).catch(res => res.error ? console.error(res.message) : alert(res.message));
   }
 
-  createFFNN(args, util) {
-    this._createFFNN(util);
+  createModel(args, util) {
+    this.promise((reject) => this._createModel(util, reject));
   }
 
-  _createFFNN(util) {
-    this.model = new FFNN();
+  _createModel(util, reject) {
+    try {
+      this.model = new FFNN();
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
   }
 
   setTrainData(args, util) {
-    this._setTrainData(args.X_TRAIN, args.Y_TRAIN, util);
+    this.promise((reject) => this._setTrainData(args.X_TRAIN, args.Y_TRAIN, util, reject));
   }
 
-  _setTrainData(x_train, y_train, util) {
+  _setTrainData(x_train, y_train, util, reject) {
     try {
-      x_train = x_train.split(' ').map(v => v.split(',').map(w => parseFloat(w)))
-      y_train = y_train.split(' ').map(v => v.split(',').map(w => parseFloat(w)))
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+
+      x_train = x_train.split(' ').map(v => v.split(',').map(w => parseFloat(w)));
+      y_train = y_train.split(' ').map(v => v.split(',').map(w => parseFloat(w)));
+
       this.model.setTrainData(x_train, y_train);
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
 
@@ -405,15 +448,18 @@ class Scratch3DeepLearningBlocks {
   }
 
   setSequential(args, util) {
-    this._setSequential(util);
+    this.promise((reject) => this._setSequential(util, reject));
   }
 
-  _setSequential(util) {
+  _setSequential(util, reject) {
     try {
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+
       this.model.setSequential();
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
 
@@ -444,28 +490,34 @@ class Scratch3DeepLearningBlocks {
   }
 
   addDense(args, util) {
-    this._addDense(args.INPUT_SHAPE, args.UNITS, args.USE_BIAS, args.ACTIVATION, util);
+    this.promise((reject) => this._addDense(args.INPUT_SHAPE, args.UNITS, args.USE_BIAS, args.ACTIVATION, util, reject));
   }
 
-  _addDense(input_shape, units, use_bias, activation, util) {
+  _addDense(input_shape, units, use_bias, activation, util, reject) {
     try {
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+
       this.model.addDense([parseInt(input_shape)], parseInt(units), use_bias == BIAS.ACTIVE, activation);
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
 
   addDenseNoShape(args, util) {
-    this._addDenseNoShape(args.UNITS, args.USE_BIAS, args.ACTIVATION, util);
+    this.promise((reject) => this._addDenseNoShape(args.UNITS, args.USE_BIAS, args.ACTIVATION, util, reject));
   }
 
-  _addDenseNoShape(units, use_bias, activation, util) {
+  _addDenseNoShape(units, use_bias, activation, util, reject) {
     try {
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+
       this.model.addDenseNoShape(parseInt(units), use_bias == '1', activation);
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
 
@@ -592,15 +644,18 @@ class Scratch3DeepLearningBlocks {
   }
 
   setLosses(args, util) {
-    this._setLosses(args.LOSSES, util);
+    this.promise((reject) => this._setLosses(args.LOSSES, util, reject));
   }
 
-  _setLosses(losses, util) {
+  _setLosses(losses, util, reject) {
     try {
-      this.model.setLosses(losses)
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+
+      this.model.setLosses(losses);
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
 
@@ -671,15 +726,18 @@ class Scratch3DeepLearningBlocks {
   }
 
   setOptimizer(args, util) {
-    this._setOptimizer(args.OPTIMIZER, args.LEARNING_RATE, util);
+    this.promise((reject) => this._setOptimizer(args.OPTIMIZER, args.LEARNING_RATE, util, reject));
   }
 
-  _setOptimizer(optimizer, learning_rate, util) {
+  _setOptimizer(optimizer, learning_rate, util, reject) {
     try {
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+
       this.model.setOptimizer(optimizer, parseFloat(learning_rate));
     }
     catch (e) {
-      alert(e)
+      return reject({ error: true, message: e });
     }
   }
 
@@ -710,12 +768,17 @@ class Scratch3DeepLearningBlocks {
   }
 
   trainModel(args, util) {
-    return this._trainModel(args.BATCH_SIZE, args.EPOCHS, args.SHUFFLE, util);
+    return this.promise((reject) => this._trainModel(args.BATCH_SIZE, args.EPOCHS, args.SHUFFLE, util, reject));
   }
 
-  _trainModel(batch_size, epochs, shuffle, util) {
+  _trainModel(batch_size, epochs, shuffle, util, reject) {
     try {
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+
+      this.waitBlockFlag = true;
       document.body.children[4].children[0].children[3].style.display = 'flex';
+
       return this.model.trainModel(parseInt(batch_size), parseInt(epochs), shuffle == 'active')
       .then(() =>  {
         document.body.children[4].children[0].children[3].style.display = 'none';
@@ -737,6 +800,8 @@ class Scratch3DeepLearningBlocks {
         ];
 
         console.log('Train:', data);
+        this.waitBlockFlag = false;
+
         return JSON.stringify({
           code: 'dl_fnn_train',
           data: data
@@ -744,14 +809,15 @@ class Scratch3DeepLearningBlocks {
       })
       .catch((err) => {
         console.error(err);
+        this.waitBlockFlag = false;
         document.body.children[4].children[0].children[3].style.display = 'none';
       })
     }
     catch (e) {
+      this.waitBlockFlag = false;
       document.body.children[4].children[0].children[3].style.display = 'none';
-      alert(e)
+      return reject({ error: true, message: e });
     }
-
   }
 
   predict(args, util) {
@@ -761,10 +827,17 @@ class Scratch3DeepLearningBlocks {
   _predict(x_test, util, reject) {
     try {
       if (!this.model)
-        return reject({ error: false, message: '학습된 모델이 존재하지 않습니다.' });
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
 
-      this.predict_value = this.model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))));
-      console.log('Predict FFNN:', this.predict_value);
+      if (!this.model.info)
+        return reject({ error: false, message: '모델 학습이 필요합니다.' });
+
+      this.predict_value = {
+        x: x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))),
+        y: this.model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))))
+      }
+
+      console.log('Predict FFNN:', this.predict_value.y);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -780,7 +853,120 @@ class Scratch3DeepLearningBlocks {
       if (!this.predict_value)
         return reject({ error: false, message: '예측된 데이터가 없습니다.' });
 
-      return (typeof this.predict_value == 'number') ? String(this.predict_value) : this.predict_value.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+      return (typeof this.predict_value.y == 'number') ? String(this.predict_value.y) : this.predict_value.y.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  savePredict(args, util) {
+    return this.promise((reject) => this._savePredict(util, reject));
+  }
+
+  _savePredict(util, reject) {
+    try {
+      if (!this.predict_value)
+        return reject({ error: false, message: '예측된 데이터가 없습니다.' });
+
+      // csv 파일
+      const filename = `dl_fnn_predict_${new Date().getTime()}.csv`;
+      const csvFromArrayOfObjects = convertArrayToCSV(this.predict_value.y.map((v, i) => {
+        return {
+          '번호': i + 1,
+          'X 값': this.predict_value.x[i].toString(),
+          'Y 값': v
+        }
+      }));
+
+      // IE 10, 11, Edge Run
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      
+        var blob = new Blob([decodeURIComponent('\ufeff' + csvFromArrayOfObjects)], {
+            type: 'text/csv;charset=uft8'
+        });
+      
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+
+      } else if (window.Blob && window.URL) {
+        // HTML5 Blob
+        var blob = new Blob(['\ufeff' + csvFromArrayOfObjects], { type: 'text/csv;charset=uft8' });
+        var csvUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('href', csvUrl);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+      
+        a.click()
+        a.remove();
+      } else {
+        // Data URI
+        var csvData = 'data:application/csv;charset=uft8,' + encodeURIComponent(csvFromArrayOfObjects);
+        var blob = new Blob(['\ufeff' + csvFromArrayOfObjects], { type: 'text/csv;charset=uft8' });
+        var csvUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('target', '_blank');
+        a.setAttribute('href', csvData);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click()
+        a.remove();
+      }
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  importModel(args, util) {
+    this.promise((reject) => this._importModel(util, reject));
+  }
+
+  _importModel(util, reject) {
+    try {
+      if (this.model)
+        if (!confirm('이미 모델이 존재합니다. 계속 진행하시겠습니까?'))
+          return;
+
+      if (!this.model)
+        this.model = new FFNN();
+
+      this.waitBlockFlag = true;
+      
+      const file = document.createElement('input');
+      file.type = 'file';
+      file.accept = '.json, .bin';
+      file.multiple = 'muptiple';
+    
+      file.onchange = (event) => {
+        this.model.import(event)
+        .then((value) => {
+          this.model.model = value;
+  
+          console.log(this.model);
+          this.waitBlockFlag = false;
+        });
+      }
+    
+      file.click();
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  exportModel(args, util) {
+    this.promise((reject) => this._exportModel(args.FILE, util, reject));
+  }
+
+  _exportModel(file, util, reject) {
+    try {
+      if (!this.model)
+        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      
+      this.model.export(file);
     }
     catch (e) {
       return reject({ error: true, message: e });
