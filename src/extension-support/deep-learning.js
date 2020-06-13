@@ -1,9 +1,11 @@
 const tf = require('@tensorflow/tfjs');
+require('regenerator-runtime')
 
 class FeedforwardNueralNetwork {
 
-  constructor() {
-    this.test;
+  constructor(model) {
+    this.model = model;
+    this.loaded = (model != undefined);
   }
 
   import(event) {
@@ -16,12 +18,17 @@ class FeedforwardNueralNetwork {
     ));
   }
 
-  export(file) {
-    return this.model.save(`downloads://${file}`);
+  export(storage, file, reject) {
+    return this.model.save(`downloads://${file}`).then((result) => console.log('Export model:', storage, result))
   }
 
   setTrainData(x_train, y_train) {
     this.x_train = tf.tensor2d(x_train);
+    this.y_train = tf.tensor2d(y_train);
+  }
+
+  setTrainImageData(x_train, y_train, axis) {
+    this.x_train = tf.concat(x_train, axis);
     this.y_train = tf.tensor2d(y_train);
   }
   
@@ -189,8 +196,7 @@ class FeedforwardNueralNetwork {
       onEpochBegin: (epoch) => {
         document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${Math.round(epoch / epochs * 100)}%...`;
       }
-    }],
-    validationData: [this.x_train, this.y_train],
+    }]
   }).then(history => {
     this.info = {
       input: {

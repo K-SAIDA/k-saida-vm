@@ -21,9 +21,10 @@ class Scratch3MachineLearningBlocks {
 
   constructor(runtime) {
     this.runtime = runtime;
+    this.waitBlockFlag = {};
 
-    this.knn_model = undefined;
-    this.waitBlockFlag = false;
+    this.knn = {};
+    this.kmeans = {};
   }
 
   getInfo() {
@@ -183,10 +184,14 @@ class Scratch3MachineLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'machineLearning.createKNN',
-            default: 'create KNN model with [X_TRAIN] and y_train [Y_TRAIN]',
+            default: 'create [STORAGE] KNN model with [X_TRAIN] and y_train [Y_TRAIN]',
             description: 'create KNN with x_train and y_train'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             X_TRAIN: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
@@ -202,10 +207,14 @@ class Scratch3MachineLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'machineLearning.predictKNN',
-            default: 'predict x_test [X_TEST]',
+            default: 'predict [STORAGE] x_test [X_TEST]',
             description: 'prediction using KNN'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             X_TEST: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
@@ -217,19 +226,44 @@ class Scratch3MachineLearningBlocks {
           blockType: BlockType.REPORTER,
           text: formatMessage({
             id: 'machineLearning.getPredictKNN',
-            default: 'get predicted data using knn',
+            default: 'get predicted [STORAGE] data using knn',
             description: 'get predicted data using knn'
-          })
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'savePredictKNN',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'machineLearning.savePredictKNN',
+            default: 'save predicted [STORAGE] data using knn',
+            description: 'save predicted data using knn'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
         },
         {
           opcode: 'classifyKMeans',
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'machineLearning.classifyKMeans',
-            default: 'classify k-means with data [DATA] and group size [GROUP_SIZE]',
+            default: 'classify k-means [STORAGE] with data [DATA] and group size [GROUP_SIZE]',
             description: 'calssify using k-means'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             DATA: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
@@ -245,19 +279,25 @@ class Scratch3MachineLearningBlocks {
           blockType: BlockType.REPORTER,
           text: formatMessage({
             id: 'machineLearning.getClassifyKMeans',
-            default: 'get classified data using k-means',
+            default: 'get classified [STORAGE] data using k-means',
             description: 'get classified data using k-means'
-          })
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
         },
       ],
       menus: {}
     };
   }
 
-  promise(callback) {
+  promise(storage, callback) {
     const promise = new Promise((resolve, reject) => {
       let timer = setInterval(() => {
-        if(this.waitBlockFlag == false) {
+        if(!(storage in this.waitBlockFlag) || this.waitBlockFlag[storage] == false) {
           resolve(callback(reject));
           clearInterval(timer);
         }
@@ -279,7 +319,7 @@ class Scratch3MachineLearningBlocks {
       return (typeof R == 'number') ? String(R) : R.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 덧셈');
     }
   }
 
@@ -295,7 +335,7 @@ class Scratch3MachineLearningBlocks {
       return (typeof R == 'number') ? String(R) : R.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 뺄셈');
     }
   }
 
@@ -319,7 +359,7 @@ class Scratch3MachineLearningBlocks {
       return (typeof R == 'number') ? String(R) : R.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 곱셈');
     }
   }
 
@@ -343,7 +383,7 @@ class Scratch3MachineLearningBlocks {
       return (typeof R == 'number') ? String(R) : R.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 나눗셈');
     }
   }
 
@@ -357,7 +397,7 @@ class Scratch3MachineLearningBlocks {
       return String(math.sum((X.length == 1 && X[0].length == 1) ? X[0][0] : X));
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 총 합계');
     }
   }
 
@@ -371,7 +411,7 @@ class Scratch3MachineLearningBlocks {
       return String(math.mean((X.length == 1 && X[0].length == 1) ? X[0][0] : X));
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 평균');
     }
   }
 
@@ -385,7 +425,7 @@ class Scratch3MachineLearningBlocks {
       return String((Array.length == 1 && Array[0].length == 1) ? Array[0][0] : Array.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur)))[parseInt(index) - 1]);
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 행 가져오기');
     }
   }
 
@@ -399,88 +439,155 @@ class Scratch3MachineLearningBlocks {
       return String((Array.length == 1 && Array[0].length == 1) ? 1 : Array.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).length);
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 행 크기');
     }
   }
 
   createKNN(args, util) {
-    this._createKNN(args.X_TRAIN, args.Y_TRAIN, util);
+    this._createKNN(args.STORAGE, args.X_TRAIN, args.Y_TRAIN, util);
   }
 
-  _createKNN(x_train, y_train, util) {
+  _createKNN(storage, x_train, y_train, util) {
     try {
-      this.knn_model = new KNN(x_train.split(' ').map(v => v.split(',').map(w => parseFloat(w))), y_train.split(' ').map(v => v.split(',').map(w => parseFloat(w))));
+      this.knn[storage] = {
+        model: new KNN(x_train.split(' ').map(v => v.split(',').map(w => parseFloat(w))), y_train.split(' ').map(v => v.split(',').map(w => parseFloat(w)))),
+        predict: undefined
+      };
+
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: KNN 모델 생성');
     }
   }
 
   predictKNN(args, util) {
-    return this._predictKNN(args.X_TEST, util);
+    return this._predictKNN(args.STORAGE, args.X_TEST, util);
   }
 
-  _predictKNN(x_test, util) {
+  _predictKNN(storage, x_test, util) {
     try {
-      this.knn_value = [this.knn_model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w)))).map(v => 1 - v)];
+      this.knn[storage].predict = {
+        x: x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))),
+        y: this.knn[storage].model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w)))).map(v => [1 - v])
+      }
 
-      console.log('Predict KNN:', this.knn_value);
+      console.log('Predict KNN:', this.knn[storage].predict.y);
     } catch (e) {
       console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: KNN 예측');
     }
   }
 
   getPredictKNN(args, util) {
-    return this._getPredictKNN(util);
+    return this._getPredictKNN(args.STORAGE, util);
   }
 
-  _getPredictKNN(util) {
+  _getPredictKNN(storage, util) {
     try {
-      if (!this.knn_value)
-        return alert('예측된 KNN 데이터가 없습니다.');
+      if (!this.knn[storage].predict)
+        return alert('오류: 예측된 KNN 데이터가 없습니다.\n블록 위치: KNN 예측 값 가져오기');
 
-      return (typeof this.knn_value == 'number') ? String(this.knn_value) : this.knn_value.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+      return (typeof this.knn[storage].predict.y == 'number') ? String(this.knn[storage].predict.y) : this.knn[storage].predict.y.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     }
     catch (e) {
-      console.error(e);
+      return console.error(e);
+    }
+  }
+
+  savePredictKNN(args, util) {
+    return this._savePredictKNN(args.STORAGE, util);
+  }
+
+  _savePredictKNN(storage, util) {
+    try {
+      if (!this.knn[storage].predict)
+        return alert('오류: 예측된 KNN 데이터가 없습니다.\n블록 위치: KNN 예측 값 CSV 저장');
+
+      // csv 파일
+      const filename = `ml_${storage}_predict_${new Date().getTime()}.csv`;
+      const csvFromArrayOfObjects = convertArrayToCSV(this.knn[storage].predict.y.map((v, i) => {
+        return {
+          '번호': i + 1,
+          'X 값': this.knn[storage].predict.x[i].toString(),
+          'Y 값': v
+        }
+      }));
+
+      // IE 10, 11, Edge Run
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      
+        var blob = new Blob([decodeURIComponent('\ufeff' + csvFromArrayOfObjects)], {
+            type: 'text/csv;charset=uft8'
+        });
+      
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+
+      } else if (window.Blob && window.URL) {
+        // HTML5 Blob
+        var blob = new Blob(['\ufeff' + csvFromArrayOfObjects], { type: 'text/csv;charset=uft8' });
+        var csvUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('href', csvUrl);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+      
+        a.click()
+        a.remove();
+      } else {
+        // Data URI
+        var csvData = 'data:application/csv;charset=uft8,' + encodeURIComponent(csvFromArrayOfObjects);
+        var blob = new Blob(['\ufeff' + csvFromArrayOfObjects], { type: 'text/csv;charset=uft8' });
+        var csvUrl = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('target', '_blank');
+        a.setAttribute('href', csvData);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click()
+        a.remove();
+      }
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
     }
   }
 
   classifyKMeans(args, util) {
-    return this._classifyKMeans(args.DATA, args.GROUP_SIZE, util);
+    return this._classifyKMeans(args.STORAGE, args.DATA, args.GROUP_SIZE, util);
   }
 
-  _classifyKMeans(data, group_size, util) {
+  _classifyKMeans(storage, data, group_size, util) {
     try {
-      this.waitBlockFlag = true;
+      this.waitBlockFlag[storage] = true;
       new KMEANS(data.split(' ').map(v => v.split(',').map(w => parseFloat(w))), { k: parseInt(group_size) }, (err, res) => {
+
         if (err) { 
           console.log(err);
-          return alert('입력 값이 잘못되었습니다.');
+          return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: KMeans 분류');
         }
 
-        this.waitBlockFlag = false;
-        this.kmeans_value = res.map((v) => v.centroid);
+        this.waitBlockFlag[storage] = false;
+        this.kmeans[storage] = res.map((v) => v.centroid);
 
-        console.log('Classify K-Means:', this.kmeans_value);
+        console.log('Classify K-Means:', this.kmeans[storage]);
       });
     } catch (e) {
-      console.error(e);
-      return alert('입력 값이 잘못되었습니다.');
+      return console.error(e);
     }
   }
 
   getClassifyKMeans(args, util) {
-    return this.promise((reject) => this._getClassifyKMeans(util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getClassifyKMeans(args.STORAGE, util, reject));
   }
 
-  _getClassifyKMeans(util, reject) {
+  _getClassifyKMeans(storage, util, reject) {
     try {
-      if (!this.kmeans_value)
-        return reject({ error: false, message: '분류된 K-Means 데이터가 없습니다.' });
+      if (!this.kmeans[storage])
+        return reject({ error: false, message: '오류: 분류된 K-Means 데이터가 없습니다.\n블록 위치: KMeans 값 가져오기' });
 
-      return (typeof this.kmeans_value == 'number') ? String(this.kmeans_value) : this.kmeans_value.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+      return (typeof this.kmeans[storage] == 'number') ? String(this.kmeans[storage]) : this.kmeans[storage].map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     }
     catch (e) {
       return reject({ error: true, message: e });

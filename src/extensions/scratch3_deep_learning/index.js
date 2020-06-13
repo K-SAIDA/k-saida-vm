@@ -5,6 +5,11 @@ const formatMessage = require('format-message');
 const { FFNN } = require('../../extension-support/deep-learning');
 const { convertArrayToCSV } = require('convert-array-to-csv');
 
+const tf = require('@tensorflow/tfjs');
+const jimp = require('jimp');
+
+require('regenerator-runtime');
+
 const blockIconURI = 'data:image/png;base64,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';
 
 const BIAS = {
@@ -70,7 +75,9 @@ class Scratch3DeepLearningBlocks {
 
   constructor(runtime) {
     this.runtime = runtime;
-    this.waitBlockFlag = false;
+    this.waitBlockFlag = {};
+
+    this.model = {};
   }
 
   getInfo() {
@@ -90,19 +97,29 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.createModel',
-            default: 'create feedforward neural network',
+            default: 'create [STORAGE] feedforward neural network',
             description: 'create feedforward neural network'
-          })
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
         },
         {
           opcode: 'setTrainData',
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.setTrainData',
-            default: 'set train data x_data [X_TRAIN] and y_data [Y_TRAIN]',
+            default: 'set train [STORAGE] data x_data [X_TRAIN] and y_data [Y_TRAIN]',
             description: 'create feedforward neural network'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             X_TRAIN: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
@@ -118,19 +135,29 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.setSequential',
-            default: 'set sequential to model',
+            default: 'set [STORAGE] sequential to model',
             description: 'set sequential to model'
-          })
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
         },
         {
           opcode: 'addDense',
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.addDense',
-            default: 'add dense to sequential with input shape [INPUT_SHAPE] units [UNITS] use bias [USE_BIAS] activation function [ACTIVATION]',
+            default: 'add [STORAGE] dense to sequential with input shape [INPUT_SHAPE] units [UNITS] use bias [USE_BIAS] activation function [ACTIVATION]',
             description: 'add dense to sequential with options'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             INPUT_SHAPE: {
               type: ArgumentType.STRING,
               defaultValue: ' '
@@ -156,10 +183,14 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.addDenseNoShape',
-            default: 'add dense to sequential with units [UNITS] use bias [USE_BIAS] activation function [ACTIVATION]',
+            default: 'add [STORAGE] dense to sequential with units [UNITS] use bias [USE_BIAS] activation function [ACTIVATION]',
             description: 'add dense to sequential without input shape'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             UNITS: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
@@ -181,10 +212,14 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.setLosses',
-            default: 'set losses function [LOSSES]',
+            default: 'set [STORAGE] losses function [LOSSES]',
             description: 'set losses function'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             LOSSES: {
               type: ArgumentType.STRING,
               menu: 'LOSSES',
@@ -197,10 +232,14 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.setOptimizer',
-            default: 'set optimizer function [OPTIMIZER] and learning rate [LEARNING_RATE]',
+            default: 'set [STORAGE] optimizer function [OPTIMIZER] and learning rate [LEARNING_RATE]',
             description: 'set optimizer function'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             OPTIMIZER: {
               type: ArgumentType.STRING,
               menu: 'OPTIMIZER',
@@ -217,10 +256,14 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.trainModel',
-            default: 'train model with batch size [BATCH_SIZE] epochs [EPOCHS] shuffle [SHUFFLE]',
+            default: 'train [STORAGE] model with batch size [BATCH_SIZE] epochs [EPOCHS] shuffle [SHUFFLE]',
             description: 'train model'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             BATCH_SIZE: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
@@ -241,10 +284,14 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.predict',
-            default: 'predict y at x [X_TEST]',
+            default: '[STORAGE] predict y at x [X_TEST]',
             description: 'predict y at x'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             X_TEST: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
@@ -256,43 +303,100 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.REPORTER,
           text: formatMessage({
             id: 'deepLearning.getPredict',
-            default: 'get predicted data using ffnn',
+            default: 'get [STORAGE] predicted data using ffnn',
             description: 'get predicted data using ffnn'
-          })
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
         },
         {
           opcode: 'savePredict',
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.savePredict',
-            default: 'save predicted data',
+            default: 'save [STORAGE] predicted data',
             description: 'save predicted data'
-          })
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
         },
         {
           opcode: 'importModel',
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.importModel',
-            default: 'import model',
+            default: 'import [STORAGE] model',
             description: 'import model'
-          })
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
         },
         {
           opcode: 'exportModel',
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.exportModel',
-            default: 'export model to [FILE]',
+            default: 'export [STORAGE] model to [FILE]',
             description: 'export model'
           }),
           arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
             FILE: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
             }
           }
-        }
+        },
+        {
+          opcode: 'setTrainImageData',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.setTrainImageData',
+            default: 'convert [STORAGE] to tensorflow image [DATA] with width [WIDTH], height [HEIGHT], channel [CHANNEL]and axis [AXIS]',
+            description: 'convert to tensorflow image with width, height and channel'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            DATA: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            WIDTH: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            HEIGHT: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            CHANNEL: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            AXIS: {
+              type: ArgumentType.STRING,
+              defaultValue: '0'
+            }
+          }
+        },
       ],
       menus: {
         ACTIVATION: this.ACTIVATION_MENU,
@@ -304,10 +408,10 @@ class Scratch3DeepLearningBlocks {
     };
   }
 
-  promise(callback) {
+  promise(storage, callback) {
     const promise = new Promise((resolve, reject) => {
       let timer = setInterval(() => {
-        if(this.waitBlockFlag == false) {
+        if(!(storage in this.waitBlockFlag) || this.waitBlockFlag[storage] == false) {
           resolve(callback(reject));
           clearInterval(timer);
         }
@@ -318,12 +422,17 @@ class Scratch3DeepLearningBlocks {
   }
 
   createModel(args, util) {
-    this.promise((reject) => this._createModel(util, reject));
+    this.promise(args.STORAGE, (reject) => this._createModel(args.STORAGE, util, reject));
   }
 
-  _createModel(util, reject) {
+  _createModel(storage, util, reject) {
     try {
-      this.model = new FFNN();
+      this.model[storage] = {
+        network: new FFNN(),
+        predict: undefined
+      }
+
+      console.log('Create model:', storage, this.model[storage]);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -331,29 +440,26 @@ class Scratch3DeepLearningBlocks {
   }
 
   setTrainData(args, util) {
-    this.promise((reject) => this._setTrainData(args.X_TRAIN, args.Y_TRAIN, util, reject));
+    this.promise(args.STORAGE, (reject) => this._setTrainData(args.STORAGE, args.X_TRAIN, args.Y_TRAIN, util, reject));
   }
 
-  _setTrainData(x_train, y_train, util, reject) {
+  _setTrainData(storage, x_train, y_train, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 훈련 값 입력' });
 
       x_train = x_train.split(' ').map(v => v.split(',').map(w => parseFloat(w)));
       y_train = y_train.split(' ').map(v => v.split(',').map(w => parseFloat(w)));
 
-      this.model.setTrainData(x_train, y_train);
+      this.model[storage].network.setTrainData(x_train, y_train);
+      
+      console.log('Set train data:', storage, this.model[storage]);
     }
     catch (e) {
       return reject({ error: true, message: e });
     }
   }
 
-  /**
-   * An array of info about each activation function.
-   * @type {object[]}
-   * @param {string} name
-   */
   get ACTIVATION_MENU() {
     return [
       {
@@ -448,26 +554,23 @@ class Scratch3DeepLearningBlocks {
   }
 
   setSequential(args, util) {
-    this.promise((reject) => this._setSequential(util, reject));
+    this.promise(args.STORAGE, (reject) => this._setSequential(args.STORAGE, util, reject));
   }
 
-  _setSequential(util, reject) {
+  _setSequential(storage, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 시퀀셜 생성' });
 
-      this.model.setSequential();
+      this.model[storage].network.setSequential();
+
+      console.log('Set sequential:', storage, this.model[storage]);
     }
     catch (e) {
       return reject({ error: true, message: e });
     }
   }
 
-  /**
-   * An array of info about each optimizer function.
-   * @type {object[]}
-   * @param {string} name
-   */
   get BIAS_MENU() {
     return [
       {
@@ -490,15 +593,16 @@ class Scratch3DeepLearningBlocks {
   }
 
   addDense(args, util) {
-    this.promise((reject) => this._addDense(args.INPUT_SHAPE, args.UNITS, args.USE_BIAS, args.ACTIVATION, util, reject));
+    this.promise(args.STORAGE, (reject) => this._addDense(args.STORAGE, args.INPUT_SHAPE, args.UNITS, args.USE_BIAS, args.ACTIVATION, util, reject));
   }
 
-  _addDense(input_shape, units, use_bias, activation, util, reject) {
+  _addDense(storage, input_shape, units, use_bias, activation, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 계층 추가' });
 
-      this.model.addDense([parseInt(input_shape)], parseInt(units), use_bias == BIAS.ACTIVE, activation);
+      this.model[storage].network.addDense([parseInt(input_shape)], parseInt(units), use_bias == BIAS.ACTIVE, activation);
+      console.log('Add dense:', storage, this.model[storage]);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -506,26 +610,22 @@ class Scratch3DeepLearningBlocks {
   }
 
   addDenseNoShape(args, util) {
-    this.promise((reject) => this._addDenseNoShape(args.UNITS, args.USE_BIAS, args.ACTIVATION, util, reject));
+    this.promise(args.STORAGE, (reject) => this._addDenseNoShape(args.STORAGE, args.UNITS, args.USE_BIAS, args.ACTIVATION, util, reject));
   }
 
-  _addDenseNoShape(units, use_bias, activation, util, reject) {
+  _addDenseNoShape(storage, units, use_bias, activation, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 계층 추가' });
 
-      this.model.addDenseNoShape(parseInt(units), use_bias == '1', activation);
+      this.model[storage].network.addDenseNoShape(parseInt(units), use_bias == '1', activation);
+      console.log('Add dense:', storage, this.model[storage]);
     }
     catch (e) {
       return reject({ error: true, message: e });
     }
   }
 
-  /**
-   * An array of info about each losses function.
-   * @type {object[]}
-   * @param {string} name
-   */
   get LOSSES_MENU() {
     return [
       {
@@ -644,26 +744,22 @@ class Scratch3DeepLearningBlocks {
   }
 
   setLosses(args, util) {
-    this.promise((reject) => this._setLosses(args.LOSSES, util, reject));
+    this.promise(args.STORAGE, (reject) => this._setLosses(args.STORAGE, args.LOSSES, util, reject));
   }
 
-  _setLosses(losses, util, reject) {
+  _setLosses(storage, losses, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 손실 함수' });
 
-      this.model.setLosses(losses);
+      this.model[storage].network.setLosses(losses);
+      console.log('Set losses function:', storage, this.model[storage].network.loss);
     }
     catch (e) {
       return reject({ error: true, message: e });
     }
   }
 
-  /**
-   * An array of info about each optimizer function.
-   * @type {object[]}
-   * @param {string} name
-   */
   get OPTIMIZER_MENU() {
     return [
       {
@@ -726,26 +822,22 @@ class Scratch3DeepLearningBlocks {
   }
 
   setOptimizer(args, util) {
-    this.promise((reject) => this._setOptimizer(args.OPTIMIZER, args.LEARNING_RATE, util, reject));
+    this.promise(args.STORAGE, (reject) => this._setOptimizer(args.STORAGE, args.OPTIMIZER, args.LEARNING_RATE, util, reject));
   }
 
-  _setOptimizer(optimizer, learning_rate, util, reject) {
+  _setOptimizer(storage, optimizer, learning_rate, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 최적화 함수' });
 
-      this.model.setOptimizer(optimizer, parseFloat(learning_rate));
+      this.model[storage].network.setOptimizer(optimizer, parseFloat(learning_rate));
+      console.log('Set optimizer function:', storage, this.model[storage].network.optimizer);
     }
     catch (e) {
       return reject({ error: true, message: e });
     }
   }
 
-  /**
-   * An array of info about each activation function.
-   * @type {object[]}
-   * @param {string} name
-   */
   get SHUFFLE_MENU() {
     return [
       {
@@ -768,39 +860,32 @@ class Scratch3DeepLearningBlocks {
   }
 
   trainModel(args, util) {
-    return this.promise((reject) => this._trainModel(args.BATCH_SIZE, args.EPOCHS, args.SHUFFLE, util, reject));
+    return this.promise(args.STORAGE, (reject) => this._trainModel(args.STORAGE, args.BATCH_SIZE, args.EPOCHS, args.SHUFFLE, util, reject));
   }
 
-  _trainModel(batch_size, epochs, shuffle, util, reject) {
+  _trainModel(storage, batch_size, epochs, shuffle, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 모델 학습' });
 
-      this.waitBlockFlag = true;
+      this.waitBlockFlag[storage] = true;
       document.body.children[4].children[0].children[3].style.display = 'flex';
 
-      return this.model.trainModel(parseInt(batch_size), parseInt(epochs), shuffle == 'active')
+      return this.model[storage].network.trainModel(parseInt(batch_size), parseInt(epochs), shuffle == 'active')
       .then(() =>  {
         document.body.children[4].children[0].children[3].style.display = 'none';
         const data = [
           {
             name: '손실율',
             values: {
-              x: this.model.info.history.epoch,
-              y: this.model.info.history.history.loss
-            }
-          },
-          {
-            name: '정확도',
-            values: {
-              x: this.model.info.history.epoch,
-              y: this.model.info.history.history.acc
+              x: this.model[storage].network.info.history.epoch,
+              y: this.model[storage].network.info.history.history.loss
             }
           }
         ];
 
-        console.log('Train:', data);
-        this.waitBlockFlag = false;
+        console.log('Train model:', storage, this.model[storage].network.info);
+        this.waitBlockFlag[storage] = false;
 
         return JSON.stringify({
           code: 'dl_fnn_train',
@@ -808,36 +893,36 @@ class Scratch3DeepLearningBlocks {
         });
       })
       .catch((err) => {
-        console.error(err);
-        this.waitBlockFlag = false;
+        this.waitBlockFlag[storage] = false;
         document.body.children[4].children[0].children[3].style.display = 'none';
-      })
+        return reject({ error: true, message: err });
+      });
     }
     catch (e) {
-      this.waitBlockFlag = false;
+      this.waitBlockFlag[storage] = false;
       document.body.children[4].children[0].children[3].style.display = 'none';
       return reject({ error: true, message: e });
     }
   }
 
   predict(args, util) {
-    this.promise((reject) => this._predict(args.X_TEST, util, reject));
+    this.promise(args.STORAGE, (reject) => this._predict(args.STORAGE, args.X_TEST, util, reject));
   }
 
-  _predict(x_test, util, reject) {
+  _predict(storage, x_test, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 예측' });
 
-      if (!this.model.info)
-        return reject({ error: false, message: '모델 학습이 필요합니다.' });
+      if (!this.model[storage].network.info && !this.model[storage].network.loaded)
+        return reject({ error: false, message: '오류: 모델 학습이 필요합니다.\n블록 위치: 예측' });
 
-      this.predict_value = {
+      this.model[storage].predict = {
         x: x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))),
-        y: this.model.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))))
+        y: this.model[storage].network.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))))
       }
 
-      console.log('Predict FFNN:', this.predict_value.y);
+      console.log('Predict FFNN:', this.model[storage].predict.y);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -845,15 +930,15 @@ class Scratch3DeepLearningBlocks {
   }
 
   getPredict(args, util) {
-    return this.promise((reject) => this._getPredict(util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getPredict(args.STORAGE, util, reject));
   }
 
-  _getPredict(util, reject) {
+  _getPredict(storage, util, reject) {
     try {
-      if (!this.predict_value)
-        return reject({ error: false, message: '예측된 데이터가 없습니다.' });
+      if (!this.model[storage].predict)
+        return reject({ error: false, message: '오류: 예측된 데이터가 없습니다.\n블록 위치: 예측 값 가져오기' });
 
-      return (typeof this.predict_value.y == 'number') ? String(this.predict_value.y) : this.predict_value.y.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+      return (typeof this.model[storage].predict.y == 'number') ? String(this.model[storage].predict.y) : this.model[storage].predict.y.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -861,20 +946,20 @@ class Scratch3DeepLearningBlocks {
   }
 
   savePredict(args, util) {
-    return this.promise((reject) => this._savePredict(util, reject));
+    return this.promise(args.STORAGE, (reject) => this._savePredict(args.STORAGE, util, reject));
   }
 
-  _savePredict(util, reject) {
+  _savePredict(storage, util, reject) {
     try {
-      if (!this.predict_value)
-        return reject({ error: false, message: '예측된 데이터가 없습니다.' });
+      if (!this.model[storage].predict)
+        return reject({ error: false, message: '오류: 예측된 데이터가 없습니다.\n블록 위치: 예측 값 저장' });
 
       // csv 파일
-      const filename = `dl_fnn_predict_${new Date().getTime()}.csv`;
-      const csvFromArrayOfObjects = convertArrayToCSV(this.predict_value.y.map((v, i) => {
+      const filename = `dl_${storage}_predict_${new Date().getTime()}.csv`;
+      const csvFromArrayOfObjects = convertArrayToCSV(this.model[storage].predict.y.map((v, i) => {
         return {
           '번호': i + 1,
-          'X 값': this.predict_value.x[i].toString(),
+          'X 값': this.model[storage].predict.x[i].toString(),
           'Y 값': v
         }
       }));
@@ -921,19 +1006,22 @@ class Scratch3DeepLearningBlocks {
   }
 
   importModel(args, util) {
-    this.promise((reject) => this._importModel(util, reject));
+    this.promise(args.STORAGE, (reject) => this._importModel(args.STORAGE, util, reject));
   }
 
-  _importModel(util, reject) {
+  _importModel(storage, util, reject) {
     try {
-      if (this.model)
+      if (this.model[storage])
         if (!confirm('이미 모델이 존재합니다. 계속 진행하시겠습니까?'))
           return;
 
-      if (!this.model)
-        this.model = new FFNN();
+      if (!this.model[storage])
+        this.model[storage] =  {
+          network: new FFNN(),
+          predict: undefined,
+        };
 
-      this.waitBlockFlag = true;
+      this.waitBlockFlag[storage] = true;
       
       const file = document.createElement('input');
       file.type = 'file';
@@ -941,13 +1029,20 @@ class Scratch3DeepLearningBlocks {
       file.multiple = 'muptiple';
     
       file.onchange = (event) => {
-        this.model.import(event)
-        .then((value) => {
-          this.model.model = value;
+        this.model[storage].network.import(event)
+        .then((model) => {
+          this.model[storage] = {
+            network: new FFNN(model),
+            predict: undefined
+          }
   
-          console.log(this.model);
-          this.waitBlockFlag = false;
-        });
+          console.log('Import Model:', model, this.model[storage]);
+          this.waitBlockFlag[storage] = false;
+        })
+        .catch((err) => {
+          this.waitBlockFlag[storage] = false;
+          return reject({ error: true, err });
+        })
       }
     
       file.click();
@@ -958,15 +1053,71 @@ class Scratch3DeepLearningBlocks {
   }
 
   exportModel(args, util) {
-    this.promise((reject) => this._exportModel(args.FILE, util, reject));
+    this.promise(args.STORAGE, (reject) => this._exportModel(args.STORAGE, args.FILE, util, reject));
   }
 
-  _exportModel(file, util, reject) {
+  _exportModel(storage, file, util, reject) {
     try {
-      if (!this.model)
-        return reject({ error: false, message: '모델이 존재하지 않습니다.' });
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 모델 내보내기' });
       
-      this.model.export(file);
+      this.model[storage].network.export(storage, file, reject);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  setTrainImageData(args, util) {
+    this.promise(args.STORAGE, (reject) => this._setTrainImageData(args.STORAGE, args.DATA, args.WIDTH, args.HEIGHT, args.CHANNEL, args.AXIS, util, reject));
+  }
+
+  _setTrainImageData(storage, data, width, height, channel, axis, util, reject) {
+    try {
+
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 훈련 이미지 등록' });
+
+      const convertImagetoTensor = async(data) => {
+        return new Promise((resolve, reject) => {
+          jimp.read(data, (err, image) => {
+            if (err)
+              return reject({ error: true, message: err });
+            
+            const h = image.bitmap.height;
+            const w = image.bitmap.width;
+            const buffer = tf.buffer([1, h, w, parseInt(channel)], 'float32');
+
+            image.scan(0, 0, w, h, (x, y, index) => {
+              buffer.set(image.bitmap.data[index], 0, y, x, 0);
+              buffer.set(image.bitmap.data[index + 1], 0, y, x, 1);
+              buffer.set(image.bitmap.data[index + 2], 0, y, x, 2);
+            });
+
+            resolve(tf.tidy(() => tf.image.resizeBilinear(
+              buffer.toTensor(), [parseInt(height), parseInt(width)]).div(255)));
+          });
+        });
+      }
+
+      (async() => {
+        
+        const json = JSON.parse(data).data;
+        const labels = Object.keys(json);
+
+        const oneHotEncoding = [];
+        const imageTensors = [];
+
+        for (const label of labels) {
+          for (const data of json[label]) {
+            oneHotEncoding.push(new Array(labels.length).fill(0).map((v, i) => (i == labels.findIndex((v) => v == label)) ? 1 : v));
+            imageTensors.push(await convertImagetoTensor(Buffer.from(data, 'base64')));
+          }
+        }
+
+        this.model[storage].network.setTrainImageData(imageTensors, oneHotEncoding, parseInt(axis));
+        console.log('Set train image data:', storage, this.model[storage].network.x_train, this.model[storage].network.y_train );
+      })();
     }
     catch (e) {
       return reject({ error: true, message: e });

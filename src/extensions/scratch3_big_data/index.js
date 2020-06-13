@@ -66,7 +66,7 @@ class Scratch3BigDataBlocks {
 
   constructor(runtime) {
     this.runtime = runtime;
-    this.waitBlockFlag = false;
+    this.waitBlockFlag = {};
 
     this.data = {};
   }
@@ -316,6 +316,36 @@ class Scratch3BigDataBlocks {
             }
           }
         },
+        {
+          opcode: 'loadImage',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.loadImage',
+            default: 'save [STORAGE] from image file',
+            description: 'save data from your image file'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getImageList',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getImageList',
+            default: 'get [STORAGE] list',
+            description: 'get list'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
       ],
       menus: {
         MISSINGVALUE: this.MISSINGVALUE_MENU,
@@ -324,10 +354,10 @@ class Scratch3BigDataBlocks {
     };
   }
 
-  promise(callback) {
+  promise(storage, callback) {
     const promise = new Promise((resolve, reject) => {
       let timer = setInterval(() => {
-        if(this.waitBlockFlag == false) {
+        if(!(storage in this.waitBlockFlag) || this.waitBlockFlag[storage] == false) {
           resolve(callback(reject));
           clearInterval(timer);
         }
@@ -347,7 +377,7 @@ class Scratch3BigDataBlocks {
 
   _loadCSV(storage, util) {
     try {
-      this.waitBlockFlag = true;
+      this.waitBlockFlag[storage] = true;
 
       const file = document.createElement('input');
       file.type = 'file';
@@ -363,14 +393,14 @@ class Scratch3BigDataBlocks {
           this.data[storage] = data.replace(/\r/g, '').split('\n').map((row) => row.split(',')).slice(0, -1);
 
           // 플래그 해제
-          this.waitBlockFlag = false;
-          console.log('loadCSV:', storage, this.data[storage]);
+          this.waitBlockFlag[storage] = false;
+          console.log('Load CSV:', storage, this.data[storage]);
         }
       };
 
       file.click();
     } catch (e) {
-      alert(e);
+      return console.error(e);
     }
   }
 
@@ -431,14 +461,14 @@ class Scratch3BigDataBlocks {
   }
 
   missingValue(args, util) {
-    this.promise((reject) => this._missingValue(args.STORAGE, args.MISSINGVALUE, util, reject));
+    this.promise(args.STORAGE, (reject) => this._missingValue(args.STORAGE, args.MISSINGVALUE, util, reject));
   }
 
   _missingValue(storage, type, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 누락 데이터 처리' });
 
       const tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity).map(row => row.map(value => value == '' ? Infinity : parseFloat(value)))) : T(this.data[storage].map(row => row.map(value => value == '' ? Infinity : parseFloat(value))));
       const nArray = tArray.map(row => row.map(value => value == Infinity ? 1 : 0).reduce((prev, cur) => prev + cur));
@@ -509,17 +539,17 @@ class Scratch3BigDataBlocks {
   }
 
   scale(args, util) {
-    this.promise((reject) => this._scale(args.STORAGE, args.SCALINGTYPE, util, reject));
+    this.promise(args.STORAGE, (reject) => this._scale(args.STORAGE, args.SCALINGTYPE, util, reject));
   }
 
   _scale(storage, type, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 스케일링' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 스케일링' });
 
       const tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity).map(row => row.map(value => parseFloat(value)))) : T(this.data[storage].map(row => row.map(value => parseFloat(value))));
       let rArray;
@@ -547,17 +577,17 @@ class Scratch3BigDataBlocks {
   }
 
   getColumnList(args, util) {
-    return this.promise((reject) => this._getColumnList(args.STORAGE, args.INDEX, util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getColumnList(args.STORAGE, args.INDEX, util, reject));
   }
 
   _getColumnList(storage, index, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 열 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 열 가져오기' });
 
       const tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity).map(row => row.map(value => parseFloat(value)))) : T(this.data[storage].map(row => row.map(value => parseFloat(value))));
 
@@ -575,17 +605,17 @@ class Scratch3BigDataBlocks {
   }
 
   getRowList(args, util) {
-    return this.promise((reject) => this._getRowList(args.STORAGE, args.INDEX, util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getRowList(args.STORAGE, args.INDEX, util, reject));
   }
 
   _getRowList(storage, index, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 행 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 행 가져오기' });
 
       const rArray = [this.data[storage][parseInt(index) - 1]];
 
@@ -601,17 +631,17 @@ class Scratch3BigDataBlocks {
   }
 
   getValue(args, util) {
-    return this.promise((reject) => this._getValue(args.STORAGE, args.ROWINDEX, args.COLUMNINDEX, util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getValue(args.STORAGE, args.ROWINDEX, args.COLUMNINDEX, util, reject));
   }
 
   _getValue(storage, row_index, column_index, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 값 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 값 가져오기' });
 
       const result = this.data[storage].map((row, i) => (i == parseInt(row_index) - 1) ? row.map((column, j) => (j == parseInt(column_index) - 1) ? column : null) : null).filter(row => row != null)[0].filter(value => value != null)[0];
       
@@ -627,17 +657,17 @@ class Scratch3BigDataBlocks {
   }
 
   getRowLength(args, util) {
-    return this.promise((reject) => this._getRowLength(args.STORAGE, util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getRowLength(args.STORAGE, util, reject));
   }
 
   _getRowLength(storage, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 행 크기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 행 크기' });
 
       return String(this.data[storage].length);
     }
@@ -647,17 +677,17 @@ class Scratch3BigDataBlocks {
   }
 
   getColumnLength(args, util) {
-    return this.promise((reject) => this._getColumnLength(args.STORAGE, util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getColumnLength(args.STORAGE, util, reject));
   }
 
   _getColumnLength(storage, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 열 크기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 열 크기' });
 
       return String(this.data[storage][0].length);
     }
@@ -667,20 +697,20 @@ class Scratch3BigDataBlocks {
   }
 
   getHeaders(args, util) {
-    return this.promise((reject) => this._getHeaders(args.STORAGE, util, reject));
+    return this.promise(args.STORAGE, (reject) => this._getHeaders(args.STORAGE, util, reject));
   }
 
   _getHeaders(storage, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 헤더 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 헤더 가져오기' });
 
       if (!this.hasHeader(this.data[storage]))
-        return reject({ error: false, message: '헤더를 찾을 수 없습니다.' });
+        return reject({ error: false, message: '오류: 헤더를 찾을 수 없습니다.\n블록 위치: 헤더 가져오기' });
 
       return [this.data[storage][0]].map(v => v.reduce((prev, cur) => ((typeof prev == 'string') ? prev : prev.toFixed(8)) + ',' + ((typeof cur == 'string') ? cur: cur.toFixed(8)))).reduce((prev, cur) => ((typeof prev == 'string') ? prev : prev.toFixed(8)) + ' ' + ((typeof cur == 'string') ? cur: cur.toFixed(8)))
     }
@@ -690,20 +720,20 @@ class Scratch3BigDataBlocks {
   }
 
   deleteHeader(args, util) {
-    this.promise((reject) => this._deleteHeader(args.STORAGE, util, reject));
+    this.promise(args.STORAGE, (reject) => this._deleteHeader(args.STORAGE, util, reject));
   }
 
   _deleteHeader(storage, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 헤더 삭제' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 헤더 삭제' });
 
       if (!this.hasHeader(this.data[storage]))
-        return reject({ error: false, message: '헤더를 찾을 수 없습니다.' });
+        return reject({ error: false, message: '오류: 헤더를 찾을 수 없습니다.\n블록 위치: 헤더 삭제' });
 
       this.data[storage] = this.data[storage].slice(1, Infinity);
       console.log('Delete header:', storage, this.data[storage]);
@@ -714,17 +744,17 @@ class Scratch3BigDataBlocks {
   }
 
   deleteRow(args, util) {
-    this.promise((reject) => this._deleteRow(args.STORAGE, args.INDEX, util, reject));
+    this.promise(args.STORAGE, (reject) => this._deleteRow(args.STORAGE, args.INDEX, util, reject));
   }
 
   _deleteRow(storage, index, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 행 삭제' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 행 삭제' });
 
       this.data[storage] = this.data[storage].filter((row, i) => i != (parseInt(index) - 1));
       console.log('Delete row:', storage, this.data[storage]);
@@ -735,17 +765,17 @@ class Scratch3BigDataBlocks {
   }
 
   deleteColumn(args, util) {
-    this.promise((reject) => this._deleteColumn(args.STORAGE, args.INDEX, util, reject));
+    this.promise(args.STORAGE, (reject) => this._deleteColumn(args.STORAGE, args.INDEX, util, reject));
   }
 
   _deleteColumn(storage, index, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: 'CSV 파일을 먼저 불러와주세요.' });
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 열 삭제' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
-        return reject({ error: false, message: '누락된 데이터값을 먼저 처리해주세요.' });
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 열 삭제' });
 
       const headers = (this.hasHeader(this.data[storage])) ? [this.data[storage].slice(0, 1)[0].filter((header, i) => i != (parseInt(index) - 1))] : undefined;
       const rArray = T(T((!headers) ? this.data[storage].map(row => row.map(value => parseFloat(value))) : this.data[storage].slice(1, Infinity).map(row => row.map(value => parseFloat(value)))).filter((row, i) => i != (parseInt(index) - 1)));
@@ -759,14 +789,14 @@ class Scratch3BigDataBlocks {
   }
 
   saveLocal(args, util) {
-    this.promise((reject) => this._saveLocal(args.STORAGE, args.FILE, util, reject));
+    this.promise(args.STORAGE, (reject) => this._saveLocal(args.STORAGE, args.FILE, util, reject));
   }
 
   _saveLocal(storage, file, util, reject) {
     try {
 
       if (!this.data[storage])
-        return reject({ error: false, message: '저장할 데이터가 없습니다.' });
+        return reject({ error: false, message: '오류: 저장할 데이터가 없습니다.\n블록 위치: CSV 저장' });
 
       // csv 파일
       const filename = `big_data_${new Date().getTime()}.csv`;
@@ -807,6 +837,76 @@ class Scratch3BigDataBlocks {
         a.click()
         a.remove();
       }
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  loadImage(args, util) {
+    this._loadImage(args.STORAGE, util);
+  }
+
+  _loadImage(storage, util) {
+    try {
+      this.waitBlockFlag[storage] = true;
+
+      const picker = document.createElement('input');
+      picker.type = 'file';
+      picker.accept = '.jpg, .jpeg, .png';
+      picker.webkitdirectory = 'webkitdirectory';
+      picker.multiple = true;
+
+      picker.addEventListener('change', (e) => {
+        
+        this.data[storage] = {};
+        for (var i = 0; i < picker.files.length; i++) {
+
+          // 파일 & 라벨
+          const file = picker.files[i];
+          const label = file.webkitRelativePath.split('/')[1];
+
+          // 라벨링을 위한 공간 생성
+          if (!this.data[storage][label])
+              this.data[storage][label] = [];
+
+          // 파일 읽어오기
+          const reader = new FileReader();
+          reader.readAsArrayBuffer(file);
+          reader.onload = (e) => this.data[storage][label].push(e.target?.result);
+        }
+
+        // 플래그 해제
+        this.waitBlockFlag[storage] = false;
+        console.log('Load images:', storage, this.data[storage]);
+      });
+
+      picker.click();
+    } catch (e) {
+      return console.error(e);
+    }
+  }
+
+  getImageList(args, util) {
+    return this.promise(args.STORAGE, (reject) => this._getImageList(args.STORAGE, util, reject));
+  }
+
+  _getImageList(storage, util, reject) {
+    try {
+      if (!this.data[storage])
+        return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 텐서 변환' });
+
+      const labels = Object.keys(this.data[storage]);
+
+      for (const label of labels) {
+        this.data[storage][label] = this.data[storage][label].map((data) => new Buffer(data).toString('base64'));
+      }
+
+      console.log('Convert to tensor:', storage, this.data[storage]);
+      return JSON.stringify({
+        code: 'getImageList',
+        data: this.data[storage]
+      });
     }
     catch (e) {
       return reject({ error: true, message: e });
