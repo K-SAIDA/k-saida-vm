@@ -1227,7 +1227,7 @@ class Scratch3DeepLearningBlocks {
         y: this.model[storage].network.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))), undefined)
       }
 
-      console.log('Predict TensorModel:', this.model[storage].predict.y);
+      console.log('Predict TensorModel:', this.model[storage].predict);
     }
     catch (e) {
       return reject({ error: true, message: e });
