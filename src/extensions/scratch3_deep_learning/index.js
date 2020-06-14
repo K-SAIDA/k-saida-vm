@@ -2,7 +2,7 @@ const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 
-const { FFNN } = require('../../extension-support/deep-learning');
+const { TensorModel } = require('../../extension-support/deep-learning');
 const { convertArrayToCSV } = require('convert-array-to-csv');
 
 const tf = require('@tensorflow/tfjs');
@@ -112,7 +112,7 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'deepLearning.setTrainData',
-            default: 'set train [STORAGE] data x_data [X_TRAIN] and y_data [Y_TRAIN]',
+            default: 'set [STORAGE] train data x_data [X_TRAIN] and y_data [Y_TRAIN]',
             description: 'create feedforward neural network'
           }),
           arguments: {
@@ -127,6 +127,41 @@ class Scratch3DeepLearningBlocks {
             Y_TRAIN: {
               type: ArgumentType.STRING,
               defaultValue: ' ',
+            }
+          }
+        },
+        {
+          opcode: 'setTrainImageData',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.setTrainImageData',
+            default: 'set [STORAGE] train data [DATA] with width [WIDTH], height [HEIGHT], channel [CHANNEL]and axis [AXIS]',
+            description: 'set train data with width, height, channel, axis'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            DATA: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            WIDTH: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            HEIGHT: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            CHANNEL: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            AXIS: {
+              type: ArgumentType.STRING,
+              defaultValue: '0'
             }
           }
         },
@@ -204,6 +239,104 @@ class Scratch3DeepLearningBlocks {
               type: ArgumentType.STRING,
               menu: 'ACTIVATION',
               defaultValue: ACTIVATION.LINEAR
+            }
+          }
+        },
+        {
+          opcode: 'addConv2d',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.addConv2d',
+            default: 'add [STORAGE] convolusion 2d to sequential with input shape [INPUT_SHAPE] kernal size [KERNEL_SIZE] filters [FILTERS] activation function [ACTIVATION]',
+            description: 'add convolusion 2d to sequential with options'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            INPUT_SHAPE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            KERNEL_SIZE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            FILTERS: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            ACTIVATION: {
+              type: ArgumentType.STRING,
+              menu: 'ACTIVATION',
+              defaultValue: ACTIVATION.RELU
+            }
+          }
+        },
+        {
+          opcode: 'addConv2dNoShape',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.addConv2dNoShape',
+            default: 'add [STORAGE] convolusion 2d to sequential with input shape [INPUT_SHAPE] kernal size [KERNEL_SIZE] filters [FILTERS] activation function [ACTIVATION]',
+            description: 'add convolusion 2d to sequential with options'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            KERNEL_SIZE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            FILTERS: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            ACTIVATION: {
+              type: ArgumentType.STRING,
+              menu: 'ACTIVATION',
+              defaultValue: ACTIVATION.RELU
+            }
+          }
+        },
+        {
+          opcode: 'addMaxPooling2d',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.addMaxPooling2d',
+            default: 'add [STORAGE] max pooling 2d to sequential with pool size [POOL_SIZE] strides [STRIDES]',
+            description: 'add max pooling 2d to sequential with options'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            POOL_SIZE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            STRIDES: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'addFlatten',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.addFlatten',
+            default: 'add [STORAGE] flatten to sequential',
+            description: 'add flatten to sequential'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
             }
           }
         },
@@ -303,8 +436,73 @@ class Scratch3DeepLearningBlocks {
           blockType: BlockType.REPORTER,
           text: formatMessage({
             id: 'deepLearning.getPredict',
-            default: 'get [STORAGE] predicted data using ffnn',
-            description: 'get predicted data using ffnn'
+            default: 'get [STORAGE] predicted data',
+            description: 'get predicted data'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'classify',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.classify',
+            default: '[STORAGE] classify data [DATA] with width [WIDTH], height [HEIGHT], channel [CHANNEL]and axis [AXIS]',
+            description: 'classify data with width, height, cannel, axis'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            DATA: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            WIDTH: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            HEIGHT: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            CHANNEL: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            AXIS: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            }
+          }
+        },
+        {
+          opcode: 'getClassify',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'deepLearning.getClassify',
+            default: 'get [STORAGE] classified data',
+            description: 'get classified data'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getClassificationAccuracy',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'deepLearning.getClassificationAccuracy',
+            default: 'get [STORAGE] classification accuracy',
+            description: 'get classification accuracy'
           }),
           arguments: {
             STORAGE: {
@@ -361,42 +559,7 @@ class Scratch3DeepLearningBlocks {
               defaultValue: ' ',
             }
           }
-        },
-        {
-          opcode: 'setTrainImageData',
-          blockType: BlockType.COMMAND,
-          text: formatMessage({
-            id: 'deepLearning.setTrainImageData',
-            default: 'convert [STORAGE] to tensorflow image [DATA] with width [WIDTH], height [HEIGHT], channel [CHANNEL]and axis [AXIS]',
-            description: 'convert to tensorflow image with width, height and channel'
-          }),
-          arguments: {
-            STORAGE: {
-              type: ArgumentType.STRING,
-              defaultValue: ' '
-            },
-            DATA: {
-              type: ArgumentType.STRING,
-              defaultValue: ' '
-            },
-            WIDTH: {
-              type: ArgumentType.STRING,
-              defaultValue: ' '
-            },
-            HEIGHT: {
-              type: ArgumentType.STRING,
-              defaultValue: ' '
-            },
-            CHANNEL: {
-              type: ArgumentType.STRING,
-              defaultValue: ' '
-            },
-            AXIS: {
-              type: ArgumentType.STRING,
-              defaultValue: '0'
-            }
-          }
-        },
+        }
       ],
       menus: {
         ACTIVATION: this.ACTIVATION_MENU,
@@ -412,7 +575,14 @@ class Scratch3DeepLearningBlocks {
     const promise = new Promise((resolve, reject) => {
       let timer = setInterval(() => {
         if(!(storage in this.waitBlockFlag) || this.waitBlockFlag[storage] == false) {
-          resolve(callback(reject));
+          resolve(callback((message) => {
+
+            this.waitBlockFlag[storage] = false;
+            document.body.children[4].children[0].children[3].style.display = 'none';
+
+            clearInterval(timer);
+            return reject(message);
+          }));
           clearInterval(timer);
         }
       }, 1000);
@@ -428,11 +598,11 @@ class Scratch3DeepLearningBlocks {
   _createModel(storage, util, reject) {
     try {
       this.model[storage] = {
-        network: new FFNN(),
+        network: new TensorModel(),
         predict: undefined
       }
 
-      console.log('Create model:', storage, this.model[storage]);
+      console.log('Create model:', storage, this.model[storage].network);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -453,7 +623,78 @@ class Scratch3DeepLearningBlocks {
 
       this.model[storage].network.setTrainData(x_train, y_train);
       
-      console.log('Set train data:', storage, this.model[storage]);
+      console.log('Set train data:', storage, this.model[storage].network.x_train, this.model[storage].network.y_train);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  setTrainImageData(args, util) {
+    this.promise(args.STORAGE, (reject) => this._setTrainImageData(args.STORAGE, args.DATA, args.WIDTH, args.HEIGHT, args.CHANNEL, args.AXIS, util, reject));
+  }
+
+  _setTrainImageData(storage, data, width, height, channel, axis, util, reject) {
+    try {
+
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 훈련 이미지 등록' });
+
+      this.waitBlockFlag[storage] = true;
+      document.body.children[4].children[0].children[3].style.display = 'flex';
+
+      const convertImagetoTensor = async(data) => {
+        return new Promise((resolve, reject) => {
+          jimp.read(data, (err, image) => {
+            if (err)
+              return reject({ error: true, message: err });
+            
+            const h = image.bitmap.height;
+            const w = image.bitmap.width;
+            const buffer = tf.buffer([1, h, w, parseInt(channel)], 'float32');
+
+            image.scan(0, 0, w, h, (x, y, index) => {
+              buffer.set(image.bitmap.data[index], 0, y, x, 0);
+              buffer.set(image.bitmap.data[index + 1], 0, y, x, 1);
+              buffer.set(image.bitmap.data[index + 2], 0, y, x, 2);
+            });
+
+            resolve(tf.tidy(() => tf.image.resizeBilinear(
+              buffer.toTensor(), [parseInt(height), parseInt(width)]).div(255)));
+          });
+        });
+      }
+
+      (async() => {
+        try {
+          const json = JSON.parse(data).data;
+          const labels = Object.keys(json);
+  
+          const oneHotEncoding = [];
+          const imageTensors = [];
+  
+          for (const label of labels) {
+  
+            let count = 0;
+            for (const data of json[label]) {
+              oneHotEncoding.push(new Array(labels.length).fill(0).map((v, i) => (i == labels.findIndex((v) => v == label)) ? 1 : v));
+              imageTensors.push(await convertImagetoTensor(Buffer.from(data, 'base64')).catch((err) => reject({ error: true, message: err })));
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${Math.round(++count / json[label].length * 100)}%...`;
+            }
+          }
+  
+          this.model[storage].network.setTrainImageData(imageTensors, oneHotEncoding, parseInt(axis));
+          this.model[storage].labels = labels;
+  
+          this.waitBlockFlag[storage] = false;
+          document.body.children[4].children[0].children[3].style.display = 'none';
+  
+          console.log('Set train image data:', storage, this.model[storage].network.x_train, this.model[storage].network.y_train);
+        }
+        catch (e) {
+          return reject({ error: true, message: e });
+        }
+      })();
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -564,7 +805,7 @@ class Scratch3DeepLearningBlocks {
 
       this.model[storage].network.setSequential();
 
-      console.log('Set sequential:', storage, this.model[storage]);
+      console.log('Set sequential:', storage, this.model[storage].network);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -599,10 +840,10 @@ class Scratch3DeepLearningBlocks {
   _addDense(storage, input_shape, units, use_bias, activation, util, reject) {
     try {
       if (!this.model[storage])
-        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 계층 추가' });
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 일반 계층' });
 
       this.model[storage].network.addDense([parseInt(input_shape)], parseInt(units), use_bias == BIAS.ACTIVE, activation);
-      console.log('Add dense:', storage, this.model[storage]);
+      console.log('Add dense:', storage, this.model[storage].network);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -616,10 +857,78 @@ class Scratch3DeepLearningBlocks {
   _addDenseNoShape(storage, units, use_bias, activation, util, reject) {
     try {
       if (!this.model[storage])
-        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 계층 추가' });
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 일반 계층' });
 
       this.model[storage].network.addDenseNoShape(parseInt(units), use_bias == '1', activation);
-      console.log('Add dense:', storage, this.model[storage]);
+      console.log('Add dense:', storage, this.model[storage].network);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  addConv2d(args, util) {
+    this.promise(args.STORAGE, (reject) => this._addConv2d(args.STORAGE, args.INPUT_SHAPE, args.KERNEL_SIZE, args.FILTERS, args.ACTIVATION, util, reject));
+  }
+
+  _addConv2d(storage, input_shape, kernel_size, filters, activation, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 이미지 계층' });
+
+      this.model[storage].network.addConv2d(input_shape.split(',').map((v) => parseInt(v)), parseInt(kernel_size), parseInt(filters), activation);
+      console.log('Add convolution 2d:', storage, this.model[storage].network);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  addConv2dNoShape(args, util) {
+    this.promise(args.STORAGE, (reject) => this._addConv2dNoShape(args.STORAGE, args.KERNEL_SIZE, args.FILTERS, args.ACTIVATION, util, reject));
+  }
+
+  _addConv2dNoShape(storage, kernel_size, filters, activation, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 이미지 계층' });
+
+      this.model[storage].network.addConv2dNoShape(parseInt(kernel_size), parseInt(filters), activation);
+      console.log('Add convolution 2d:', storage, this.model[storage].network);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  addMaxPooling2d(args, util) {
+    this.promise(args.STORAGE, (reject) => this._addMaxPooling2d(args.STORAGE, args.POOL_SIZE, args.STRIDES, util, reject));
+  }
+
+  _addMaxPooling2d(storage, pool_size, strides, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 이미지 풀링 계층' });
+
+      this.model[storage].network.addMaxPooling2d(pool_size.split(',').map(v => parseInt(v)), strides.split(',').map(v => parseInt(v)));
+      console.log('Add max pooling 2d:', storage, this.model[storage].network);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  addFlatten(args, util) {
+    this.promise(args.STORAGE, (reject) => this._addFlatten(args.STORAGE, util, reject));
+  }
+
+  _addFlatten(storage, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 평탄화 계층' });
+
+      this.model[storage].network.addFlatten();
+      console.log('Add flatten:', storage, this.model[storage].network);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -865,14 +1174,16 @@ class Scratch3DeepLearningBlocks {
 
   _trainModel(storage, batch_size, epochs, shuffle, util, reject) {
     try {
+
       if (!this.model[storage])
         return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 모델 학습' });
 
       this.waitBlockFlag[storage] = true;
       document.body.children[4].children[0].children[3].style.display = 'flex';
 
-      return this.model[storage].network.trainModel(parseInt(batch_size), parseInt(epochs), shuffle == 'active')
+      return this.model[storage].network.trainModel(parseInt(batch_size), parseInt(epochs), shuffle == 'active', reject)
       .then(() =>  {
+
         document.body.children[4].children[0].children[3].style.display = 'none';
         const data = [
           {
@@ -892,15 +1203,9 @@ class Scratch3DeepLearningBlocks {
           data: data
         });
       })
-      .catch((err) => {
-        this.waitBlockFlag[storage] = false;
-        document.body.children[4].children[0].children[3].style.display = 'none';
-        return reject({ error: true, message: err });
-      });
+      .catch((err) => reject({ error: true, message: err }));
     }
     catch (e) {
-      this.waitBlockFlag[storage] = false;
-      document.body.children[4].children[0].children[3].style.display = 'none';
       return reject({ error: true, message: e });
     }
   }
@@ -919,10 +1224,83 @@ class Scratch3DeepLearningBlocks {
 
       this.model[storage].predict = {
         x: x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))),
-        y: this.model[storage].network.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))))
+        y: this.model[storage].network.predict(x_test.split(' ').map(v => v.split(',').map(w => parseFloat(w))), undefined)
       }
 
-      console.log('Predict FFNN:', this.model[storage].predict.y);
+      console.log('Predict TensorModel:', this.model[storage].predict.y);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  classify(args, util) {
+    this.promise(args.STORAGE, (reject) => this._classify(args.STORAGE, args.DATA, args.WIDTH, args.HEIGHT, args.CHANNEL, args.AXIS, util, reject));
+  }
+
+  _classify(storage, data, width, height, channel, axis, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 이미지 예측' });
+
+      if (!this.model[storage].network.info && !this.model[storage].network.loaded)
+        return reject({ error: false, message: '오류: 모델 학습이 필요합니다.\n블록 위치: 이미지 예측' });
+
+      this.waitBlockFlag[storage] = true;
+      document.body.children[4].children[0].children[3].style.display = 'flex';
+
+      const convertImagetoTensor = async(data) => {
+        return new Promise((resolve, reject) => {
+          jimp.read(data, (err, image) => {
+            if (err) 
+              return reject({ error: true, message: err });
+            
+            const h = image.bitmap.height;
+            const w = image.bitmap.width;
+            const buffer = tf.buffer([1, h, w, parseInt(channel)], 'float32');
+
+            image.scan(0, 0, w, h, (x, y, index) => {
+              buffer.set(image.bitmap.data[index], 0, y, x, 0);
+              buffer.set(image.bitmap.data[index + 1], 0, y, x, 1);
+              buffer.set(image.bitmap.data[index + 2], 0, y, x, 2);
+            });
+
+            resolve(tf.tidy(() => tf.image.resizeBilinear(
+              buffer.toTensor(), [parseInt(height), parseInt(width)]).div(255)));
+          });
+        });
+      }
+  
+      (async() => {
+        try {
+          const json = JSON.parse(data).data;
+          const labels = Object.keys(json);
+  
+          const imageTensorsWithLabel = [];
+          for (const label of labels) {
+            for (const data of json[label]) {
+              imageTensorsWithLabel.push({
+                label: label,
+                data: await convertImagetoTensor(Buffer.from(data, 'base64'))
+              });
+            }
+          }
+  
+          this.model[storage].classify = {
+            x: imageTensorsWithLabel,
+            y: imageTensorsWithLabel.map(imageTensorWithlabel => [labels[this.model[storage].network.classify(imageTensorWithlabel.data, parseInt(axis))[0]]]),
+          }
+          this.model[storage].classify.accuracy = this.model[storage].classify.y.map((v, i) => (v[0] == this.model[storage].classify.x[i].label) ? 1 : 0).reduce((prev, cur) => prev + cur) / this.model[storage].classify.x.length * 100;
+  
+          this.waitBlockFlag[storage] = false;
+          document.body.children[4].children[0].children[3].style.display = 'none';
+  
+          console.log('Classify result:', storage, this.model[storage].classify);
+        }
+        catch (e) {
+          return reject({ error: true, message: e });
+        }
+      })();
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -935,10 +1313,51 @@ class Scratch3DeepLearningBlocks {
 
   _getPredict(storage, util, reject) {
     try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 예측 값 가져오기' });
+
       if (!this.model[storage].predict)
         return reject({ error: false, message: '오류: 예측된 데이터가 없습니다.\n블록 위치: 예측 값 가져오기' });
 
       return (typeof this.model[storage].predict.y == 'number') ? String(this.model[storage].predict.y) : this.model[storage].predict.y.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getClassify(args, util) {
+    return this.promise(args.STORAGE, (reject) => this._getClassify(args.STORAGE, util, reject));
+  }
+
+  _getClassify(storage, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 분류 값 가져오기' });
+
+      if (!this.model[storage].classify)
+        return reject({ error: false, message: '오류: 분류된 데이터가 없습니다.\n블록 위치: 분류 값 가져오기' });
+
+      return (typeof this.model[storage].classify.y == 'number') ? String(this.model[storage].classify.y) : this.model[storage].classify.y.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur))).reduce((prev, cur) => String(prev) + ' ' + String(cur));
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getClassificationAccuracy(args, util) {
+    return this.promise(args.STORAGE, (reject) => this._getClassificationAccuracy(args.STORAGE, util, reject));
+  }
+
+  _getClassificationAccuracy(storage, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 분류 정확도 가져오기' });
+
+      if (!this.model[storage].classify)
+        return reject({ error: false, message: '오류: 분류된 데이터가 없습니다.\n블록 위치: 분류 정확도 가져오기' });
+
+      return this.model[storage].classify.accuracy;
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -951,6 +1370,9 @@ class Scratch3DeepLearningBlocks {
 
   _savePredict(storage, util, reject) {
     try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 예측 값 저장' });
+
       if (!this.model[storage].predict)
         return reject({ error: false, message: '오류: 예측된 데이터가 없습니다.\n블록 위치: 예측 값 저장' });
 
@@ -1017,7 +1439,7 @@ class Scratch3DeepLearningBlocks {
 
       if (!this.model[storage])
         this.model[storage] =  {
-          network: new FFNN(),
+          network: new TensorModel(),
           predict: undefined,
         };
 
@@ -1032,10 +1454,10 @@ class Scratch3DeepLearningBlocks {
         this.model[storage].network.import(event)
         .then((model) => {
           this.model[storage] = {
-            network: new FFNN(model),
+            network: new TensorModel(model),
             predict: undefined
           }
-  
+
           console.log('Import Model:', model, this.model[storage]);
           this.waitBlockFlag[storage] = false;
         })
@@ -1046,8 +1468,10 @@ class Scratch3DeepLearningBlocks {
       }
     
       file.click();
+      this.waitBlockFlag[storage] = false;
     }
     catch (e) {
+      this.waitBlockFlag[storage] = false;
       return reject({ error: true, message: e });
     }
   }
@@ -1062,62 +1486,6 @@ class Scratch3DeepLearningBlocks {
         return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 모델 내보내기' });
       
       this.model[storage].network.export(storage, file, reject);
-    }
-    catch (e) {
-      return reject({ error: true, message: e });
-    }
-  }
-
-  setTrainImageData(args, util) {
-    this.promise(args.STORAGE, (reject) => this._setTrainImageData(args.STORAGE, args.DATA, args.WIDTH, args.HEIGHT, args.CHANNEL, args.AXIS, util, reject));
-  }
-
-  _setTrainImageData(storage, data, width, height, channel, axis, util, reject) {
-    try {
-
-      if (!this.model[storage])
-        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 훈련 이미지 등록' });
-
-      const convertImagetoTensor = async(data) => {
-        return new Promise((resolve, reject) => {
-          jimp.read(data, (err, image) => {
-            if (err)
-              return reject({ error: true, message: err });
-            
-            const h = image.bitmap.height;
-            const w = image.bitmap.width;
-            const buffer = tf.buffer([1, h, w, parseInt(channel)], 'float32');
-
-            image.scan(0, 0, w, h, (x, y, index) => {
-              buffer.set(image.bitmap.data[index], 0, y, x, 0);
-              buffer.set(image.bitmap.data[index + 1], 0, y, x, 1);
-              buffer.set(image.bitmap.data[index + 2], 0, y, x, 2);
-            });
-
-            resolve(tf.tidy(() => tf.image.resizeBilinear(
-              buffer.toTensor(), [parseInt(height), parseInt(width)]).div(255)));
-          });
-        });
-      }
-
-      (async() => {
-        
-        const json = JSON.parse(data).data;
-        const labels = Object.keys(json);
-
-        const oneHotEncoding = [];
-        const imageTensors = [];
-
-        for (const label of labels) {
-          for (const data of json[label]) {
-            oneHotEncoding.push(new Array(labels.length).fill(0).map((v, i) => (i == labels.findIndex((v) => v == label)) ? 1 : v));
-            imageTensors.push(await convertImagetoTensor(Buffer.from(data, 'base64')));
-          }
-        }
-
-        this.model[storage].network.setTrainImageData(imageTensors, oneHotEncoding, parseInt(axis));
-        console.log('Set train image data:', storage, this.model[storage].network.x_train, this.model[storage].network.y_train );
-      })();
     }
     catch (e) {
       return reject({ error: true, message: e });

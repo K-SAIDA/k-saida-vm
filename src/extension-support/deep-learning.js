@@ -1,7 +1,7 @@
 const tf = require('@tensorflow/tfjs');
 require('regenerator-runtime')
 
-class FeedforwardNueralNetwork {
+class TensorModel {
 
   constructor(model) {
     this.model = model;
@@ -51,6 +51,34 @@ class FeedforwardNueralNetwork {
       return new Error('해당 블록은 setSequential() 블록과 함께 사용되어야 합니다.');
 
     this.model.add(tf.layers.dense({ activation: activation, units: units, useBias: useBias }));
+  }
+
+  addConv2d(input_shape, kernel_size, filters, activation) {
+    if (!this.model)
+      return new Error('해당 블록은 setSequential() 블록과 함께 사용되어야 합니다.');
+
+    this.model.add(tf.layers.conv2d({ inputShape: input_shape, kernelSize: kernel_size, filters: filters, activation: activation }));
+  }
+
+  addConv2dNoShape(kernel_size, filters, activation) {
+    if (!this.model)
+      return new Error('해당 블록은 setSequential() 블록과 함께 사용되어야 합니다.');
+
+    this.model.add(tf.layers.conv2d({ kernelSize: kernel_size, filters: filters, activation: activation }));
+  }
+
+  addMaxPooling2d(pool_size, strides) {
+    if (!this.model)
+      return new Error('해당 블록은 setSequential() 블록과 함께 사용되어야 합니다.');
+
+    this.model.add(tf.layers.maxPooling2d({poolSize: pool_size, strides: strides}));
+  }
+
+  addFlatten() {
+    if (!this.model)
+      return new Error('해당 블록은 setSequential() 블록과 함께 사용되어야 합니다.');
+
+    this.model.add(tf.layers.flatten());
   }
 
   setLosses(type = 'meanSquaredError') {
@@ -141,10 +169,10 @@ class FeedforwardNueralNetwork {
     }
   }
 
- trainModel(batch_size = 1, epochs = 100, shuffle = true, metrics = 'meanSquaredError') {
+ trainModel(batch_size = 1, epochs = 100, shuffle = true, metrics = 'meanSquaredError', reject) {
 
   if (!this.x_train || !this.y_train || !(this.model || this.customModel) || !this.optimizer || !this.loss)
-    return new Error('해당 블록은 predict(x_pred) 블록 바로 전에만 올 수 있습니다.');
+    return reject({ error: false, message: '오류: 학습을 위한 선행 작업이 완료되지 않았습니다.\n블록 위치: 모델 학습' });
 
   switch (metrics) {
     case 'bianryAccuracy':
@@ -210,14 +238,19 @@ class FeedforwardNueralNetwork {
       shuffle: shuffle,
       history: history
     }
-  });
+  })
+  .catch((e) => reject({ error: true, message: e }));
  }
 
- predict(x_pred) {
-   return x_pred.map((v) => this.model.predict(tf.tensor2d([v])).dataSync())
- }
+  predict(x_pred) {
+    return x_pred.map((v) => this.model.predict(tf.tensor2d([v])).dataSync())
+  }
+
+  classify(data, axis) {
+    return tf.tidy(() => Array.from(this.model.predict(data).argMax(axis).dataSync()));
+  }
 }
 
 module.exports = {
-  FFNN: FeedforwardNueralNetwork
+  TensorModel: TensorModel
 }

@@ -298,7 +298,14 @@ class Scratch3MachineLearningBlocks {
     const promise = new Promise((resolve, reject) => {
       let timer = setInterval(() => {
         if(!(storage in this.waitBlockFlag) || this.waitBlockFlag[storage] == false) {
-          resolve(callback(reject));
+          resolve(callback((message) => {
+
+            this.waitBlockFlag[storage] = false;
+            document.body.children[4].children[0].children[3].style.display = 'none';
+
+            clearInterval(timer);
+            return reject(message);
+          }));
           clearInterval(timer);
         }
       }, 1000);
@@ -421,7 +428,7 @@ class Scratch3MachineLearningBlocks {
 
   _getRowOfArrayAtIndex(array, index, util) {
     try {
-      const Array = (typeof array == 'string') ? array.split(' ').map(v => v.split(',').map(w => parseFloat(w))) : array;
+      const Array = (typeof array == 'string') ? array.split(' ').map(v => v.split(',').map(w => isNaN(parseFloat(w)) ? w : parseFloat(w))) : array;
       return String((Array.length == 1 && Array[0].length == 1) ? Array[0][0] : Array.map(v => v.reduce((prev, cur) => String(prev) + ',' + String(cur)))[parseInt(index) - 1]);
     } catch (e) {
       console.error(e);

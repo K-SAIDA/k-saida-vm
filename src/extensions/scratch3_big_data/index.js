@@ -69,6 +69,7 @@ class Scratch3BigDataBlocks {
     this.waitBlockFlag = {};
 
     this.data = {};
+    this.type = {};
   }
 
   getInfo() {
@@ -346,6 +347,21 @@ class Scratch3BigDataBlocks {
             }
           }
         },
+        {
+          opcode: 'getSizeImageLabel',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'bigData.getSizeImageLabel',
+            default: 'get [STORAGE] size of label',
+            description: 'get size of list'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
       ],
       menus: {
         MISSINGVALUE: this.MISSINGVALUE_MENU,
@@ -358,7 +374,14 @@ class Scratch3BigDataBlocks {
     const promise = new Promise((resolve, reject) => {
       let timer = setInterval(() => {
         if(!(storage in this.waitBlockFlag) || this.waitBlockFlag[storage] == false) {
-          resolve(callback(reject));
+          resolve(callback((message) => {
+
+            this.waitBlockFlag[storage] = false;
+            document.body.children[4].children[0].children[3].style.display = 'none';
+
+            clearInterval(timer);
+            return reject(message);
+          }));
           clearInterval(timer);
         }
       }, 1000);
@@ -391,6 +414,7 @@ class Scratch3BigDataBlocks {
 
           const data = e.target.result;
           this.data[storage] = data.replace(/\r/g, '').split('\n').map((row) => row.split(',')).slice(0, -1);
+          this.type[storage] = 'csv';
 
           // 플래그 해제
           this.waitBlockFlag[storage] = false;
@@ -467,7 +491,7 @@ class Scratch3BigDataBlocks {
   _missingValue(storage, type, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 누락 데이터 처리' });
 
       const tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity).map(row => row.map(value => value == '' ? Infinity : parseFloat(value)))) : T(this.data[storage].map(row => row.map(value => value == '' ? Infinity : parseFloat(value))));
@@ -545,7 +569,7 @@ class Scratch3BigDataBlocks {
   _scale(storage, type, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 스케일링' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -583,7 +607,7 @@ class Scratch3BigDataBlocks {
   _getColumnList(storage, index, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 열 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -611,7 +635,7 @@ class Scratch3BigDataBlocks {
   _getRowList(storage, index, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 행 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -637,7 +661,7 @@ class Scratch3BigDataBlocks {
   _getValue(storage, row_index, column_index, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 값 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -663,7 +687,7 @@ class Scratch3BigDataBlocks {
   _getRowLength(storage, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 행 크기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -683,7 +707,7 @@ class Scratch3BigDataBlocks {
   _getColumnLength(storage, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 열 크기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -703,7 +727,7 @@ class Scratch3BigDataBlocks {
   _getHeaders(storage, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 헤더 가져오기' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -726,7 +750,7 @@ class Scratch3BigDataBlocks {
   _deleteHeader(storage, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 헤더 삭제' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -750,7 +774,7 @@ class Scratch3BigDataBlocks {
   _deleteRow(storage, index, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 행 삭제' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -771,7 +795,7 @@ class Scratch3BigDataBlocks {
   _deleteColumn(storage, index, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 열 삭제' });
 
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
@@ -795,7 +819,7 @@ class Scratch3BigDataBlocks {
   _saveLocal(storage, file, util, reject) {
     try {
 
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: 저장할 데이터가 없습니다.\n블록 위치: CSV 저장' });
 
       // csv 파일
@@ -849,6 +873,7 @@ class Scratch3BigDataBlocks {
 
   _loadImage(storage, util) {
     try {
+
       this.waitBlockFlag[storage] = true;
 
       const picker = document.createElement('input');
@@ -858,7 +883,6 @@ class Scratch3BigDataBlocks {
       picker.multiple = true;
 
       picker.addEventListener('change', (e) => {
-        
         this.data[storage] = {};
         for (var i = 0; i < picker.files.length; i++) {
 
@@ -874,6 +898,7 @@ class Scratch3BigDataBlocks {
           const reader = new FileReader();
           reader.readAsArrayBuffer(file);
           reader.onload = (e) => this.data[storage][label].push(e.target?.result);
+          this.type[storage] = 'image';
         }
 
         // 플래그 해제
@@ -882,7 +907,10 @@ class Scratch3BigDataBlocks {
       });
 
       picker.click();
+      this.waitBlockFlag[storage] = false;
+
     } catch (e) {
+      this.waitBlockFlag[storage] = false;
       return console.error(e);
     }
   }
@@ -893,7 +921,7 @@ class Scratch3BigDataBlocks {
 
   _getImageList(storage, util, reject) {
     try {
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'image'))
         return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 텐서 변환' });
 
       const labels = Object.keys(this.data[storage]);
@@ -907,6 +935,22 @@ class Scratch3BigDataBlocks {
         code: 'getImageList',
         data: this.data[storage]
       });
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  getSizeImageLabel(args, util) {
+    return this.promise(args.STORAGE, (reject) => this._getSizeImageLabel(args.STORAGE, util, reject));
+  }
+
+  _getSizeImageLabel(storage, util, reject) {
+    try {
+      if (!this.data[storage] || (this.type[storage] != 'image'))
+        return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 라벨 갯수' });
+
+      return String(Object.keys(this.data[storage]).length);
     }
     catch (e) {
       return reject({ error: true, message: e });
