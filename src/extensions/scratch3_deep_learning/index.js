@@ -1468,7 +1468,6 @@ class Scratch3DeepLearningBlocks {
       }
     
       file.click();
-      this.waitBlockFlag[storage] = false;
     }
     catch (e) {
       this.waitBlockFlag[storage] = false;

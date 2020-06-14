@@ -3,6 +3,7 @@ const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
 
 const { convertArrayToCSV } = require('convert-array-to-csv');
+const jimp = require('jimp');
 
 const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAC4jAAAuIwF4pT92AAAHwmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0MzYwLCAyMDIwLzAyLzEzLTAxOjA3OjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdGVEYXRlPSIyMDIwLTA2LTEwVDA4OjQ2OjI0KzA5OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpmNjEzYTdhOS1lMmRiLWIxNDktYTUzYS01ZjM2ODQ1YjgxZjgiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDoxZGRjOTE1Yy02ZjYyLWIzNDktYWI1MS0wZTVmZmE3YmVlY2MiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJzYXZlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0RXZ0OndoZW49IjIwMjAtMDYtMTBUMDg6NDY6NTgrMDk6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4xIChXaW5kb3dzKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY29udmVydGVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJmcm9tIGFwcGxpY2F0aW9uL3ZuZC5hZG9iZS5waG90b3Nob3AgdG8gaW1hZ2UvcG5nIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJkZXJpdmVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJjb252ZXJ0ZWQgZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6ZjYxM2E3YTktZTJkYi1iMTQ5LWE1M2EtNWYzNjg0NWI4MWY4IiBzdEV2dDp3aGVuPSIyMDIwLTA2LTEwVDA4OjQ2OjU4KzA5OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMSAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmUyNjY4MGFjLTQyOWQtZjM0Ni1hMzQzLWU4NDdmZGEyYWMyNyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0UmVmOm9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz5BMx9UAAADGklEQVRo3u2aT0gUURzHLahDRy/dkrx16A+tVphYCUJmVhtd+4OxEFSHjiLFqlS7yeZqrLl5iqIoOnXwIEISruKtDiaFdsxt3VIk8Pjt92N+S8PsbDs783b2LazwgfG98b3vxzdv/ryZOgB1Z58qpZ14T6wSW8IPKWtX2Rdnr1MosJuYJlCEadlXK4Gwg+BWwjoIdBBpF+FzpKUN3wX4EJjyENzKlJvDyo3ALmJAYXArA9JHWQRiZQxuJaZS4AKx7mP4HOvSt2uBPcRcBYJbmZMsJQn0aRDcSp9TgVENw+cYLSYQ8trJuXHgeAxofgQcHTLgbS7jOgUSoUICDV4b7yLOjAHXXwI33wA3XhvwNpdxXZeakWiwCtQT97w2fDoBnBgGVtaQ98NlXMf7KBDgrPVmgSDxUYlAHPiezRfgMq5TJMBZg2aBXrnl9SzQRv/lZZsR4LI2dSPAWXvNAoMqLlb/E+BD6CSNwBGa0IcjxsRulu2W0ic4Zx00C/CtbbasI5ABWiloD03mO++A228NeDv0CuhMlDTBOWvYV4GvP4FDD4Evq/l1S2njNNuZ0F3gQZULHCSBRRsBlmqpCdQEagL+CfBFp/Ux0BT9d8fZRBelY0PGxWpFdwHuqOcFcMtyx3nluSGm9QhwJ3zOXioQhENyWP0F0vZB+GqrvQB3ZndFXayWEdBRgFfEflWRwG/ObBbgR7S1KhLIEHfNAteIz1Uk8Im4ahZoJEacCvC5/lvG/rY4EC38UM91dmcvbovbLEGAszZal1UCjpZOxoCOJ0B4EkjOAvEPBuOzRtmpEaB/0vjdXNcvdWFLXVL+jtvkth0KBAotbEWK/XE3cT5p3Ebso6fS/fcNeJvLgs/c1XGb3c7CR4otLaY0XlpMOVkb3U7MaBh+RrI5Xl6/LK9IKx18S7K4esGxk5ioYPgJyeD5FdMBn+dGSvpU/pJvLzFfxuDz0kfZX7NeJDYUBt+QNn190b2NiCsIPyxtVexTAx7yBRfBF0o5XPz42OMSsekg+Kbsq93XKswOIkosy0PHHyErZVHZR9nnNn8BiZ32ezGmlfkAAAAASUVORK5CYII=';
 
@@ -383,6 +384,48 @@ class Scratch3BigDataBlocks {
               type: ArgumentType.STRING,
               defaultValue: ' '
             }
+          }
+        },
+        {
+          opcode: 'resizeImage',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.resizeImage',
+            default: 'resize [STORAGE] image width [WIDTH] height [HEIGHT]',
+            description: 'resize image width height'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            WIDTH: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            HEIGHT: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'modifierGreyscale',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.modifierGreyscale',
+            default: 'modifier [STORAGE] image to greyscale with amount [AMOUNT]',
+            description: 'resize image width height'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            AMOUNT: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
           }
         },
         {
@@ -1025,12 +1068,106 @@ class Scratch3BigDataBlocks {
         console.log('Load images:', storage, this.data[storage]);
       });
 
-      picker.click();
-      this.waitBlockFlag[storage] = false;
+      picker.addEventListener('focus', (e) => {
+        console.log(e);
+      })
 
+      picker.click();
     } catch (e) {
       this.waitBlockFlag[storage] = false;
       return console.error(e);
+    }
+  }
+
+  resizeImage(args, util) {
+    this.promise(args.STORAGE, (reject) => this._resizeImage(args.STORAGE, args.WIDTH, args.HEIGHT, util, reject));
+  }
+
+  _resizeImage(storage, width, height, util, reject) {
+    try {
+      if (!this.data[storage] || (this.type[storage] != 'image'))
+        return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 크기 조절' });
+
+      (async() => {
+        try {
+
+          this.waitBlockFlag[storage] = true;
+          document.body.children[4].children[0].children[3].style.display = 'flex';
+
+          const labels = Object.keys(this.data[storage]);
+          for (const label of labels) {
+
+            let images = [];
+            for (const data of this.data[storage][label]) {
+              const image = await jimp.read(data);
+              const resizedImage = await image.resize(parseInt(width), parseInt(height));
+              const buffer = await resizedImage.getBufferAsync(jimp.AUTO);
+              images.push(buffer);
+
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${Math.round(images.length / this.data[storage][label].length * 100)}%...`;
+            }
+
+            this.data[storage][label] = images;
+          }
+          
+          this.waitBlockFlag[storage] = false;
+          document.body.children[4].children[0].children[3].style.display = 'none';
+
+          console.log('Resize image:', storage, this.data[storage]);
+        }
+        catch (e) {
+          return reject({ error: true, message: e });
+        }
+      })();
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  modifierGreyscale(args, util) {
+    this.promise(args.STORAGE, (reject) => this._modifierGreyscale(args.STORAGE, args.AMOUNT, util, reject));
+  }
+
+  _modifierGreyscale(storage, amount, util, reject) {
+    try {
+      if (!this.data[storage] || (this.type[storage] != 'image'))
+        return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 회색조 변환' });
+
+      (async() => {
+        try {
+
+          this.waitBlockFlag[storage] = true;
+          document.body.children[4].children[0].children[3].style.display = 'flex';
+
+          const labels = Object.keys(this.data[storage]);
+          for (const label of labels) {
+
+            let images = [];
+            for (const data of this.data[storage][label]) {
+              const image = await jimp.read(data);
+              const greyImage = await image.color([{ apply: 'greyscale', params: [parseInt(amount)] }]);
+              const buffer = await greyImage.getBufferAsync(jimp.AUTO);
+              images.push(buffer);
+
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${Math.round(images.length / this.data[storage][label].length * 100)}%...`;
+            }
+
+            this.data[storage][label] = images;
+          }
+          
+          this.waitBlockFlag[storage] = false;
+          document.body.children[4].children[0].children[3].style.display = 'none';
+
+          console.log('Modifier greyscale:', storage, this.data[storage]);
+        }
+        catch (e) {
+          return reject({ error: true, message: e });
+        }
+      })();
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
     }
   }
 
