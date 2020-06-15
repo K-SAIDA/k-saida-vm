@@ -566,7 +566,7 @@ class Scratch3BigDataBlocks {
         reader.onload = (e) => {
 
           const data = e.target.result;
-          this.data[storage] = data.replace(/\r/g, '').split('\n').map((row) => row.split(',')).slice(0, -1);
+          this.data[storage] = data.replace(/\r/g, '').split('\n').map((row) => row.split(',').map((v) => v.trim())).slice(0, -1);
           this.type[storage] = 'csv';
 
           // 플래그 해제
