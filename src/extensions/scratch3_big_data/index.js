@@ -647,7 +647,13 @@ class Scratch3BigDataBlocks {
       if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 누락 데이터 처리' });
 
-      const tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity).map(row => row.map(value => value == '' ? Infinity : parseFloat(value)))) : T(this.data[storage].map(row => row.map(value => value == '' ? Infinity : parseFloat(value))));
+      const getRandomInt = (min, max) => {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min)) + min;
+      }
+
+      const tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity).map(row => row.map(value => value == '' ? Infinity : (isNaN(parseFloat(value)) ? value : parseInt(value))))) : T(this.data[storage].map(row => row.map(value => value == '' ? Infinity : (isNaN(parseFloat(value)) ? value : parseInt(value)))));
       const nArray = tArray.map(row => row.map(value => value == Infinity ? 1 : 0).reduce((prev, cur) => prev + cur));
       let rArray;
 
@@ -655,32 +661,37 @@ class Scratch3BigDataBlocks {
         case 'zero':
           this.data[storage] = this.data[storage].map(row => row.map(value => value == '' ? '0' : value));
           break;
+
         case 'mean':
           const meanArray = tArray.map((row, i) => (Math.max.apply(null, row.filter(value => value != Infinity)) + Math.min.apply(null, row.filter(value => value != Infinity))) / 2);
-          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? meanArray[i] : value))).map(row => row.map(value => value.toFixed(8)));
+          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? meanArray[i] : value))).map(row => row.map(value => isNaN(parseFloat(value)) ? ((typeof value == 'number') ? '' : value) : value.toFixed(8)));
 
           this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(0, 1).concat(rArray) : rArray;
           break;
+
         case 'min':
           const minArray = tArray.map(row => Math.min.apply(null, row.filter(value => value != Infinity)));
-          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? minArray[i] : value))).map(row => row.map(value => value.toFixed(8)));
+          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? minArray[i] : value))).map(row => row.map(value => isNaN(parseFloat(value)) ? ((typeof value == 'number') ? '' : value) : value.toFixed(8)));
 
           this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(0, 1).concat(rArray) : rArray;
           break;
+
         case 'max':
           const maxArray = tArray.map(row => Math.max.apply(null, row.filter(value => value != Infinity)));
-          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? maxArray[i] : value))).map(row => row.map(value => value.toFixed(8)));
+          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? maxArray[i] : value))).map(row => row.map(value => isNaN(parseFloat(value)) ? ((typeof value == 'number') ? '' : value) : value.toFixed(8)));
 
           this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(0, 1).concat(rArray) : rArray;
           break;
+
         case 'average':
           const avgArray = tArray.map((row, i) => row.filter(value => value != Infinity).reduce((prev, cur) => prev + cur) / (row.length - nArray[i]));
-          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? avgArray[i] : value))).map(row => row.map(value => value.toFixed(8)));
+          rArray = T(tArray.map((row, i) => row.map(value => value == Infinity ? avgArray[i] : value))).map(row => row.map(value => isNaN(parseFloat(value)) ? ((typeof value == 'number') ? '' : value) : value.toFixed(8)));
 
           this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(0, 1).concat(rArray) : rArray;
           break;
+
         case 'delete':
-          this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] != '') : this.data[storage].filter(row => row.filter(value => value == '')[0] != '');
+          this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(0, 1).concat(this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] != '')) : this.data[storage].filter(row => row.filter(value => value == '')[0] != '');
           break;
       }
 
@@ -757,7 +768,7 @@ class Scratch3BigDataBlocks {
     this.promise(args.STORAGE, (reject) => this._autoLabelAtAll(args.STORAGE, util, reject));
   }
 
-  _autoLabelAtAll(storage, index, util, reject) {
+  _autoLabelAtAll(storage, util, reject) {
     try {
 
       if (!this.data[storage] || (this.type[storage] != 'csv'))
@@ -769,6 +780,10 @@ class Scratch3BigDataBlocks {
       let tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity)) : T(this.data[storage]);
       tArray = tArray.map((row, i) => {
         const token = Array.from(new Set(row)).sort();
+
+        if (token.map((v) => (isNaN(parseFloat(v))) ? 1 : 0).reduce((prev, cur) => prev + cur) == 0)
+          return row;
+        
         return row.map(v => token.findIndex((w) => v == w).toFixed(8));
       });
 
@@ -794,8 +809,12 @@ class Scratch3BigDataBlocks {
         return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 스케일링' });
 
       let tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity)) : T(this.data[storage]);
-      index.split(',').map(i => {
+      String(index).trim().split(',').map(i => {
         const token = Array.from(new Set(tArray[parseInt(i) - 1])).sort();
+
+        if (token.filter((v) => (isNaN(parseFloat(v))) ? 1 : 0).reduce((prev, cur) => prev + cur) > 0)
+          return;
+
         tArray = tArray.map((row, j) => (j == parseInt(i) - 1) ? (row.map(v => token.findIndex((w) => v == w).toFixed(8))) : row);
       });
 
@@ -847,7 +866,7 @@ class Scratch3BigDataBlocks {
         return alert(`오류: 배열의 참조 범위를 초과했습니다. (값: ${index}})\n블록 위치: 열 가져오기`);
       
       const nArray = [];
-      index.split(',').map(i => {
+      String(index).trim().split(',').map(i => {
         nArray.push(tArray[parseInt(i) - 1]);
       });
     
@@ -874,7 +893,7 @@ class Scratch3BigDataBlocks {
         return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 행 가져오기' });
 
       const rArray = [];
-      index.split(',').map(i => {
+      String(index).trim().split(',').map(i => {
         rArray.push(this.data[storage][parseInt(i) - 1]);
       });
 
@@ -1206,6 +1225,8 @@ class Scratch3BigDataBlocks {
       if (!this.data[storage] || (this.type[storage] != 'image'))
         return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 크기 조절' });
 
+      // document.body.children[4].children[0].children[3].children[0].children[1].innerHTML = '<span>이미지 전처리 작업 중</span>';
+
       (async() => {
         try {
 
@@ -1268,7 +1289,7 @@ class Scratch3BigDataBlocks {
               const buffer = await greyImage.getBufferAsync(jimp.AUTO);
               images.push(buffer);
 
-              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${Math.round(images.length / this.data[storage][label].length * 100)}%...`;
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerHTML = `${label}: ${Math.round(images.length / this.data[storage][label].length * 100)}%...`;
             }
 
             this.data[storage][label] = images;
