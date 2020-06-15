@@ -36,13 +36,7 @@ const base = {
             })
         ]
     },
-    plugins: [],
-    node: {
-      fs: 'empty',
-      net: 'empty',
-      tls: 'empty',
-      child_process: 'empty'
-    }
+    plugins: []
 };
 
 module.exports = [

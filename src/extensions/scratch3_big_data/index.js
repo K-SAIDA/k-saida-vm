@@ -141,6 +141,40 @@ class Scratch3BigDataBlocks {
           }
         },
         {
+          opcode: 'autoLabelAtAll',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.autoLabelAtAll',
+            default: 'auto labeling [STORAGE] at all',
+            description: 'auto labeling at all'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'autoLabelAtIndex',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.autoLabelAtIndex',
+            default: 'auto labeling [STORAGE] at [INDEX]',
+            description: 'auto labeling at index'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            INDEX: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
           opcode: 'deleteHeader',
           blockType: BlockType.COMMAND,
           text: formatMessage({
@@ -458,6 +492,29 @@ class Scratch3BigDataBlocks {
             }
           }
         },
+        {
+          opcode: 'saveImageLocal',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.saveImageLocal',
+            default: 'save [STORAGE]at label [LABEL], index [INDEX]on local PC',
+            description: 'get size of list'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            LABEL: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            INDEX: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
       ],
       menus: {
         MISSINGVALUE: this.MISSINGVALUE_MENU,
@@ -696,6 +753,60 @@ class Scratch3BigDataBlocks {
     }
   }
 
+  autoLabelAtAll(args, util) {
+    this.promise(args.STORAGE, (reject) => this._autoLabelAtAll(args.STORAGE, util, reject));
+  }
+
+  _autoLabelAtAll(storage, index, util, reject) {
+    try {
+
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 스케일링' });
+
+      if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 스케일링' });
+
+      let tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity)) : T(this.data[storage]);
+      tArray = tArray.map((row, i) => {
+        const token = Array.from(new Set(row)).sort();
+        return row.map(v => token.findIndex((w) => v == w).toFixed(8));
+      });
+
+      this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(0, 1).concat(T(tArray)) : T(tArray);
+      console.log('Auto label at all:', storage, this.data[storage]);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  autoLabelAtIndex(args, util) {
+    this.promise(args.STORAGE, (reject) => this._autoLabelAtIndex(args.STORAGE, args.INDEX, util, reject));
+  }
+
+  _autoLabelAtIndex(storage, index, util, reject) {
+    try {
+
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
+        return reject({ error: false, message: '오류: CSV 파일을 먼저 불러와주세요.\n블록 위치: 스케일링' });
+
+      if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
+        return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 스케일링' });
+
+      let tArray = (this.hasHeader(this.data[storage])) ? T(this.data[storage].slice(1, Infinity)) : T(this.data[storage]);
+      index.split(',').map(i => {
+        const token = Array.from(new Set(tArray[parseInt(i) - 1])).sort();
+        tArray = tArray.map((row, j) => (j == parseInt(i) - 1) ? (row.map(v => token.findIndex((w) => v == w).toFixed(8))) : row);
+      });
+
+      this.data[storage] = (this.hasHeader(this.data[storage])) ? this.data[storage].slice(0, 1).concat(T(tArray)) : T(tArray);
+      console.log('Auto label:', storage, this.data[storage]);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
   getAllList(args, util) {
     return this.promise(args.STORAGE, (reject) => this._getAllList(args.STORAGE, util, reject));
   }
@@ -735,8 +846,12 @@ class Scratch3BigDataBlocks {
       if (parseInt(index) - 1 >= tArray.length)
         return alert(`오류: 배열의 참조 범위를 초과했습니다. (값: ${index}})\n블록 위치: 열 가져오기`);
       
-      const rArray = T([tArray[parseInt(index) - 1]]);
-
+      const nArray = [];
+      index.split(',').map(i => {
+        nArray.push(tArray[parseInt(i) - 1]);
+      });
+    
+      const rArray = T(nArray);
       console.log('Get column list:', storage, rArray);
       return (typeof rArray == 'number') ? rArray.toFixed(8) : rArray.map(v => v.reduce((prev, cur) => ((typeof prev == 'string') ? prev : prev.toFixed(8)) + ',' + ((typeof cur == 'string') ? cur: cur.toFixed(8)))).reduce((prev, cur) => ((typeof prev == 'string') ? prev : prev.toFixed(8)) + ' ' + ((typeof cur == 'string') ? cur: cur.toFixed(8)))
     }
@@ -758,7 +873,10 @@ class Scratch3BigDataBlocks {
       if (this.data[storage].slice(1, Infinity).filter(row => row.filter(value => value == '')[0] == '').length != 0)
         return reject({ error: false, message: '오류: 누락된 데이터값을 먼저 처리해주세요.\n블록 위치: 행 가져오기' });
 
-      const rArray = [this.data[storage][parseInt(index) - 1]];
+      const rArray = [];
+      index.split(',').map(i => {
+        rArray.push(this.data[storage][parseInt(i) - 1]);
+      });
 
       if (rArray == [])
         return reject({ error: false, message: `오류: 올바르지 않은 행 번호입니다. (값: ${index})\n블록 위치: 행 가져오기` });
@@ -1100,7 +1218,7 @@ class Scratch3BigDataBlocks {
             let images = [];
             for (const data of this.data[storage][label]) {
               const image = await jimp.read(data);
-              const resizedImage = await image.resize(parseInt(width), parseInt(height));
+              const resizedImage = await image.resize((width == 'auto') ? jimp.auto : parseInt(width), (height == 'auto') ? jimp.auto : parseInt(height));
               const buffer = await resizedImage.getBufferAsync(jimp.AUTO);
               images.push(buffer);
 
@@ -1207,6 +1325,60 @@ class Scratch3BigDataBlocks {
         return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 라벨 갯수' });
 
       return String(Object.keys(this.data[storage]).length);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  saveImageLocal(args, util) {
+    this.promise(args.STORAGE, (reject) => this._saveImageLocal(args.STORAGE, args.LABEL, args.INDEX, util, reject));
+  }
+
+  _saveImageLocal(storage, label, index, util, reject) {
+    try {
+
+      if (!this.data[storage] || (this.type[storage] != 'image'))
+        return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 이미지 저장' });
+
+      // image 파일
+      const filename = `${label}_${index}.png`;
+      const imgData = new Buffer(this.data[storage][label][parseInt(index) - 1]).toString('base64');
+      const imgView = new Uint8Array(new ArrayBuffer(imgData.length));
+
+      imgData.split('').map((v, i) => {
+        imgView[i] = imgData.charCodeAt(i) & 0xff;
+      });
+
+      // IE 10, 11, Edge Run
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+        var blob = new Blob([imgView], {
+            type: 'application/octet-stream'
+        });
+      
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+      } else if (window.Blob && window.URL) {
+        // HTML5 Blob
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('href', `data:application/octet-stream;base64,${imgData}`);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+      
+        a.click()
+        a.remove();
+      } else {
+        // Data URI
+        var a = document.createElement('a');
+        a.setAttribute('style', 'display:none');
+        a.setAttribute('target', '_blank');
+        a.setAttribute('href', `data:application/octet-stream;base64,${imgData}`);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+
+        a.click()
+        a.remove();
+      }
     }
     catch (e) {
       return reject({ error: true, message: e });
