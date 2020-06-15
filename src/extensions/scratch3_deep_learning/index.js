@@ -1,6 +1,7 @@
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
+const timeFormatter = require('../../util/time-formatter');
 
 const { TensorModel } = require('../../extension-support/deep-learning');
 const { convertArrayToCSV } = require('convert-array-to-csv');
@@ -642,6 +643,7 @@ class Scratch3DeepLearningBlocks {
 
       this.waitBlockFlag[storage] = true;
       document.body.children[4].children[0].children[3].style.display = 'flex';
+      document.body.children[4].children[0].children[3].children[0].children[1].innerText = '훈련 데이터 설정 중';
 
       const convertImagetoTensor = async(data) => {
         return new Promise((resolve, reject) => {
@@ -676,10 +678,14 @@ class Scratch3DeepLearningBlocks {
           for (const label of labels) {
   
             let count = 0;
+            const startTime = new Date().getTime();
             for (const data of json[label]) {
               oneHotEncoding.push(new Array(labels.length).fill(0).map((v, i) => (i == labels.findIndex((v) => v == label)) ? 1 : v));
               imageTensors.push(await convertImagetoTensor(Buffer.from(data, 'base64')).catch((err) => reject({ error: true, message: err })));
-              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${Math.round(++count / json[label].length * 100)}%...`;
+
+              const percentage = Math.round(++count / json[label].length * 100);
+              const remainTime = Math.round(((new Date().getTime() - startTime) / percentage) * (100 - percentage) / 1000);
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${percentage}%...(남은 시간: ${timeFormatter(remainTime)})`;
             }
           }
   
@@ -688,6 +694,7 @@ class Scratch3DeepLearningBlocks {
   
           this.waitBlockFlag[storage] = false;
           document.body.children[4].children[0].children[3].style.display = 'none';
+          document.body.children[4].children[0].children[3].children[0].children[1].innerText = '작업을 처리하는 중';
   
           console.log('Set train image data:', storage, this.model[storage].network.x_train, this.model[storage].network.y_train);
         }
@@ -1180,11 +1187,10 @@ class Scratch3DeepLearningBlocks {
 
       this.waitBlockFlag[storage] = true;
       document.body.children[4].children[0].children[3].style.display = 'flex';
+      document.body.children[4].children[0].children[3].children[0].children[1].innerText = '모델을 훈련하는 중';
 
       return this.model[storage].network.trainModel(parseInt(batch_size), parseInt(epochs), shuffle == 'active', reject)
       .then(() =>  {
-
-        document.body.children[4].children[0].children[3].style.display = 'none';
         const data = [
           {
             name: '손실율',
@@ -1196,7 +1202,10 @@ class Scratch3DeepLearningBlocks {
         ];
 
         console.log('Train model:', storage, this.model[storage].network.info);
+
         this.waitBlockFlag[storage] = false;
+        document.body.children[4].children[0].children[3].style.display = 'none';
+        document.body.children[4].children[0].children[3].children[0].children[1].innerText = '작업을 처리하는 중';
 
         return JSON.stringify({
           code: 'dl_fnn_train',
@@ -1248,6 +1257,7 @@ class Scratch3DeepLearningBlocks {
 
       this.waitBlockFlag[storage] = true;
       document.body.children[4].children[0].children[3].style.display = 'flex';
+      document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = '';
 
       const convertImagetoTensor = async(data) => {
         return new Promise((resolve, reject) => {

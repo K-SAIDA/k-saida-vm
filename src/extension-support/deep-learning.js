@@ -1,5 +1,7 @@
+const timeFormatter = require('../util/time-formatter');
+
 const tf = require('@tensorflow/tfjs');
-require('regenerator-runtime')
+require('regenerator-runtime');
 
 class TensorModel {
 
@@ -216,13 +218,16 @@ class TensorModel {
     metrics: ['accuracy']
   });
 
+  const startTime = new Date().getTime();
   return this.model.fit(this.x_train, this.y_train, {
     batchSize: batch_size,
     epochs: epochs,
     shuffle: shuffle,
     callbacks: [{
       onEpochBegin: (epoch) => {
-        document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${Math.round(epoch / epochs * 100)}%...`;
+        const percentage = Math.round(epoch / epochs * 100);
+        const remainTime = Math.round(((new Date().getTime() - startTime) / percentage) * (100 - percentage) / 1000);
+        document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `진행률: ${percentage}%...(남은 시간: ${timeFormatter(remainTime)})`;
       }
     }]
   }).then(history => {

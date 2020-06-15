@@ -1,6 +1,7 @@
 const ArgumentType = require('../../extension-support/argument-type');
 const BlockType = require('../../extension-support/block-type');
 const formatMessage = require('format-message');
+const timeFormatter = require('../../util/time-formatter');
 
 const { convertArrayToCSV } = require('convert-array-to-csv');
 const jimp = require('jimp');
@@ -531,6 +532,7 @@ class Scratch3BigDataBlocks {
 
             this.waitBlockFlag[storage] = false;
             document.body.children[4].children[0].children[3].style.display = 'none';
+            document.body.children[4].children[0].children[3].children[0].children[1].innerText = '작업을 처리하는 중';
 
             clearInterval(timer);
             return reject(message);
@@ -1202,12 +1204,9 @@ class Scratch3BigDataBlocks {
 
         // 플래그 해제
         this.waitBlockFlag[storage] = false;
+
         console.log('Load images:', storage, this.data[storage]);
       });
-
-      picker.addEventListener('focus', (e) => {
-        console.log(e);
-      })
 
       picker.click();
     } catch (e) {
@@ -1225,25 +1224,27 @@ class Scratch3BigDataBlocks {
       if (!this.data[storage] || (this.type[storage] != 'image'))
         return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 크기 조절' });
 
-      // document.body.children[4].children[0].children[3].children[0].children[1].innerHTML = '<span>이미지 전처리 작업 중</span>';
-
       (async() => {
         try {
 
           this.waitBlockFlag[storage] = true;
           document.body.children[4].children[0].children[3].style.display = 'flex';
+          document.body.children[4].children[0].children[3].children[0].children[1].innerText = '이미지 크기 조절 중';
 
           const labels = Object.keys(this.data[storage]);
           for (const label of labels) {
 
             let images = [];
+            const startTime = new Date().getTime();
             for (const data of this.data[storage][label]) {
               const image = await jimp.read(data);
               const resizedImage = await image.resize((width == 'auto') ? jimp.auto : parseInt(width), (height == 'auto') ? jimp.auto : parseInt(height));
               const buffer = await resizedImage.getBufferAsync(jimp.AUTO);
               images.push(buffer);
 
-              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${Math.round(images.length / this.data[storage][label].length * 100)}%...`;
+              const percentage = Math.round(images.length / this.data[storage][label].length * 100);
+              const remainTime = Math.round(((new Date().getTime() - startTime) / percentage) * (100 - percentage) / 1000);
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${percentage}%...(남은 시간: ${timeFormatter(remainTime)})`;
             }
 
             this.data[storage][label] = images;
@@ -1251,6 +1252,7 @@ class Scratch3BigDataBlocks {
           
           this.waitBlockFlag[storage] = false;
           document.body.children[4].children[0].children[3].style.display = 'none';
+          document.body.children[4].children[0].children[3].children[0].children[1].innerText = '작업을 처리하는 중';
 
           console.log('Resize image:', storage, this.data[storage]);
         }
@@ -1278,18 +1280,22 @@ class Scratch3BigDataBlocks {
 
           this.waitBlockFlag[storage] = true;
           document.body.children[4].children[0].children[3].style.display = 'flex';
+          document.body.children[4].children[0].children[3].children[0].children[1].innerText = '회색조 필터 적용 중';
 
           const labels = Object.keys(this.data[storage]);
           for (const label of labels) {
 
             let images = [];
+            const startTime = new Date().getTime();
             for (const data of this.data[storage][label]) {
               const image = await jimp.read(data);
               const greyImage = await image.color([{ apply: 'greyscale', params: [parseInt(amount)] }]);
               const buffer = await greyImage.getBufferAsync(jimp.AUTO);
               images.push(buffer);
 
-              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerHTML = `${label}: ${Math.round(images.length / this.data[storage][label].length * 100)}%...`;
+              const percentage = Math.round(images.length / this.data[storage][label].length * 100);
+              const remainTime = Math.round(((new Date().getTime() - startTime) / percentage) * (100 - percentage) / 1000);
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${percentage}%...(남은 시간: ${timeFormat(remainTime)})`;
             }
 
             this.data[storage][label] = images;
@@ -1297,6 +1303,7 @@ class Scratch3BigDataBlocks {
           
           this.waitBlockFlag[storage] = false;
           document.body.children[4].children[0].children[3].style.display = 'none';
+          document.body.children[4].children[0].children[3].children[0].children[1].innerText = '작업을 처리하는 중';
 
           console.log('Modifier greyscale:', storage, this.data[storage]);
         }
