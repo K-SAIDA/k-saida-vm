@@ -1299,15 +1299,16 @@ class Scratch3BigDataBlocks {
         return reject({ error: false, message: '오류: 이미지 파일을 먼저 불러와주세요.\n블록 위치: 텐서 변환' });
 
       const labels = Object.keys(this.data[storage]);
+      const newData = {};
 
       for (const label of labels) {
-        this.data[storage][label] = this.data[storage][label].map((data) => new Buffer(data).toString('base64'));
+        newData[label] = this.data[storage][label].map((data) => new Buffer(data).toString('base64'));
       }
 
-      console.log('Convert to tensor:', storage, this.data[storage]);
+      console.log('Convert to tensor:', storage, newData);
       return JSON.stringify({
         code: 'getImageList',
-        data: this.data[storage]
+        data: newData
       });
     }
     catch (e) {
