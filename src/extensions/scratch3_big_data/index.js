@@ -1295,7 +1295,7 @@ class Scratch3BigDataBlocks {
 
               const percentage = Math.round(images.length / this.data[storage][label].length * 100);
               const remainTime = Math.round(((new Date().getTime() - startTime) / percentage) * (100 - percentage) / 1000);
-              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${percentage}%...(남은 시간: ${timeFormat(remainTime)})`;
+              document.body.children[4].children[0].children[3].children[0].children[2].children[0].children[0].innerText = `${label}: ${percentage}%...(남은 시간: ${timeFormatter(remainTime)})`;
             }
 
             this.data[storage][label] = images;
