@@ -5,6 +5,8 @@ const timeFormatter = require('../../util/time-formatter');
 
 const { convertArrayToCSV } = require('convert-array-to-csv');
 const jimp = require('jimp');
+const cheerio = require('cheerio');
+const axios = require('axios');
 
 const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAC4jAAAuIwF4pT92AAAHwmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDIgNzkuMTY0MzYwLCAyMDIwLzAyLzEzLTAxOjA3OjIyICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOmRjPSJodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4xLyIgeG1sbnM6cGhvdG9zaG9wPSJodHRwOi8vbnMuYWRvYmUuY29tL3Bob3Rvc2hvcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdGVEYXRlPSIyMDIwLTA2LTEwVDA4OjQ2OjI0KzA5OjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgeG1wOk1ldGFkYXRhRGF0ZT0iMjAyMC0wNi0xMFQwODo0Njo1OCswOTowMCIgZGM6Zm9ybWF0PSJpbWFnZS9wbmciIHBob3Rvc2hvcDpDb2xvck1vZGU9IjMiIHBob3Rvc2hvcDpJQ0NQcm9maWxlPSJzUkdCIElFQzYxOTY2LTIuMSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpmNjEzYTdhOS1lMmRiLWIxNDktYTUzYS01ZjM2ODQ1YjgxZjgiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDoxZGRjOTE1Yy02ZjYyLWIzNDktYWI1MS0wZTVmZmE3YmVlY2MiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciPiA8eG1wTU06SGlzdG9yeT4gPHJkZjpTZXE+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJzYXZlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0RXZ0OndoZW49IjIwMjAtMDYtMTBUMDg6NDY6NTgrMDk6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyMS4xIChXaW5kb3dzKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY29udmVydGVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJmcm9tIGFwcGxpY2F0aW9uL3ZuZC5hZG9iZS5waG90b3Nob3AgdG8gaW1hZ2UvcG5nIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJkZXJpdmVkIiBzdEV2dDpwYXJhbWV0ZXJzPSJjb252ZXJ0ZWQgZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6ZjYxM2E3YTktZTJkYi1iMTQ5LWE1M2EtNWYzNjg0NWI4MWY4IiBzdEV2dDp3aGVuPSIyMDIwLTA2LTEwVDA4OjQ2OjU4KzA5OjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjEuMSAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPC9yZGY6U2VxPiA8L3htcE1NOkhpc3Rvcnk+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOmUyNjY4MGFjLTQyOWQtZjM0Ni1hMzQzLWU4NDdmZGEyYWMyNyIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciIHN0UmVmOm9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDplMjY2ODBhYy00MjlkLWYzNDYtYTM0My1lODQ3ZmRhMmFjMjciLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz5BMx9UAAADGklEQVRo3u2aT0gUURzHLahDRy/dkrx16A+tVphYCUJmVhtd+4OxEFSHjiLFqlS7yeZqrLl5iqIoOnXwIEISruKtDiaFdsxt3VIk8Pjt92N+S8PsbDs783b2LazwgfG98b3vxzdv/ryZOgB1Z58qpZ14T6wSW8IPKWtX2Rdnr1MosJuYJlCEadlXK4Gwg+BWwjoIdBBpF+FzpKUN3wX4EJjyENzKlJvDyo3ALmJAYXArA9JHWQRiZQxuJaZS4AKx7mP4HOvSt2uBPcRcBYJbmZMsJQn0aRDcSp9TgVENw+cYLSYQ8trJuXHgeAxofgQcHTLgbS7jOgUSoUICDV4b7yLOjAHXXwI33wA3XhvwNpdxXZeakWiwCtQT97w2fDoBnBgGVtaQ98NlXMf7KBDgrPVmgSDxUYlAHPiezRfgMq5TJMBZg2aBXrnl9SzQRv/lZZsR4LI2dSPAWXvNAoMqLlb/E+BD6CSNwBGa0IcjxsRulu2W0ic4Zx00C/CtbbasI5ABWiloD03mO++A228NeDv0CuhMlDTBOWvYV4GvP4FDD4Evq/l1S2njNNuZ0F3gQZULHCSBRRsBlmqpCdQEagL+CfBFp/Ux0BT9d8fZRBelY0PGxWpFdwHuqOcFcMtyx3nluSGm9QhwJ3zOXioQhENyWP0F0vZB+GqrvQB3ZndFXayWEdBRgFfEflWRwG/ObBbgR7S1KhLIEHfNAteIz1Uk8Im4ahZoJEacCvC5/lvG/rY4EC38UM91dmcvbovbLEGAszZal1UCjpZOxoCOJ0B4EkjOAvEPBuOzRtmpEaB/0vjdXNcvdWFLXVL+jtvkth0KBAotbEWK/XE3cT5p3Ebso6fS/fcNeJvLgs/c1XGb3c7CR4otLaY0XlpMOVkb3U7MaBh+RrI5Xl6/LK9IKx18S7K4esGxk5ioYPgJyeD5FdMBn+dGSvpU/pJvLzFfxuDz0kfZX7NeJDYUBt+QNn190b2NiCsIPyxtVexTAx7yBRfBF0o5XPz42OMSsekg+Kbsq93XKswOIkosy0PHHyErZVHZR9nnNn8BiZ32ezGmlfkAAAAASUVORK5CYII=';
 
@@ -20,6 +22,12 @@ const MISSINGVALUE = {
 const SCALINGTYPE = {
   NORMALIZATION: 'normalization',
   STANDARDIZATION: 'standardization', 
+}
+
+const URL = {
+  MELON:'melon',
+  INSTAGRAM:'instagram',
+  DAUM:'daum'
 }
 
 const T = (a) => {
@@ -55,6 +63,47 @@ const T = (a) => {
   return t;
 }
 
+const downloadCSV = (data) => {
+  const filename = `big_data_${new Date().getTime()}.csv`;
+  const csvFromArrayOfArrays  = convertArrayToCSV(data);
+
+  // IE 10, 11, Edge Run
+  if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+  
+    var blob = new Blob([decodeURIComponent('\ufeff' + csvFromArrayOfArrays)], {
+        type: 'text/csv;charset=uft8'
+    });
+  
+    window.navigator.msSaveOrOpenBlob(blob, filename);
+
+  } else if (window.Blob && window.URL) {
+    // HTML5 Blob
+    var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
+    var csvUrl = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.setAttribute('style', 'display:none');
+    a.setAttribute('href', csvUrl);
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+  
+    a.click()
+    a.remove();
+  } else {
+    // Data URI
+    var csvData = 'data:application/csv;charset=uft8,' + encodeURIComponent(csvFromArrayOfArrays);
+    var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
+    var csvUrl = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.setAttribute('style', 'display:none');
+    a.setAttribute('target', '_blank');
+    a.setAttribute('href', csvData);
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+    a.click()
+    a.remove();
+  }
+}
+
 class Scratch3BigDataBlocks {
 
   static get EXTESNION_NAME() {
@@ -72,6 +121,7 @@ class Scratch3BigDataBlocks {
 
     this.data = {};
     this.type = {};
+    this.crawling = {};
   }
 
   getInfo() {
@@ -531,10 +581,76 @@ class Scratch3BigDataBlocks {
             }
           }
         },
+        {
+          opcode: 'crawlingURL',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.crawlingURL',
+            default: 'set choose [URL]',
+            description: 'set choose url'
+          }),
+          arguments: {
+            URL: {
+              type: ArgumentType.STRING,
+              menu: 'URL',
+              defaultValue: URL.MELON
+            },
+          }
+        },
+        {
+          opcode: 'crawlingLogin',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.crawlingLogin',
+            default: 'enter [IDENTITY] [PASSWORD]',
+            description: 'enter id, pw'
+          }),
+          arguments: {
+            IDENTITY: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            PASSWORD: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'crawlingWord',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.crawlingWord',
+            default: 'search [WORD]',
+            description: 'search word'
+          }),
+          arguments: {
+            WORD: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'crawlingExecute',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.crawlingExecute',
+            default: '[NUMBER] Execute crawling and save csv',
+            description: 'Execution crawling and save csv'
+          }),
+          arguments: {
+            NUMBER: {
+              type: ArgumentType.STRING,
+              defaultValue:' '
+            }
+          }
+        },
       ],
       menus: {
         MISSINGVALUE: this.MISSINGVALUE_MENU,
         SCALINGTYPE: this.SCALINGTYPE_MENU,
+        URL:this.URL_MENU
       }
     };
   }
@@ -1138,45 +1254,7 @@ class Scratch3BigDataBlocks {
       if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: 저장할 데이터가 없습니다.\n블록 위치: CSV 저장' });
 
-      // csv 파일
-      const filename = `big_data_${new Date().getTime()}.csv`;
-      const csvFromArrayOfArrays  = convertArrayToCSV(this.data[storage]);
-
-      // IE 10, 11, Edge Run
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-      
-        var blob = new Blob([decodeURIComponent('\ufeff' + csvFromArrayOfArrays)], {
-            type: 'text/csv;charset=uft8'
-        });
-      
-        window.navigator.msSaveOrOpenBlob(blob, filename);
-
-      } else if (window.Blob && window.URL) {
-        // HTML5 Blob
-        var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
-        var csvUrl = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.setAttribute('style', 'display:none');
-        a.setAttribute('href', csvUrl);
-        a.setAttribute('download', filename);
-        document.body.appendChild(a);
-      
-        a.click()
-        a.remove();
-      } else {
-        // Data URI
-        var csvData = 'data:application/csv;charset=uft8,' + encodeURIComponent(csvFromArrayOfArrays);
-        var blob = new Blob(['\ufeff' + csvFromArrayOfArrays], { type: 'text/csv;charset=uft8' });
-        var csvUrl = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.setAttribute('style', 'display:none');
-        a.setAttribute('target', '_blank');
-        a.setAttribute('href', csvData);
-        a.setAttribute('download', filename);
-        document.body.appendChild(a);
-        a.click()
-        a.remove();
-      }
+      downloadCSV(this.data[storage]);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -1435,14 +1513,150 @@ class Scratch3BigDataBlocks {
 
   _showViewer(storage, util, reject) {
     try {
-      if (!this.data[storage])
+      if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: 시각화할 대상이 존재하지 않습니다.\n블록 위치: 시각화' });
 
       document.body.children[4].children[0].children[4].style.display='flex';
-      document.body.children[4].children[0].children[4].children[0].children[1].innerHTML = `<h1>이곳에 시각화할 html 코드를 입력해주세요</h1>`;
+      document.body.children[4].children[0].children[4].children[0].children[1].innerHTML = 
+      `
+        <h1>
+          ${storage} 데이터 테이블
+        </h1>
+        <div>
+          <table>
+            ${this.data[storage].map(v => `<tr>${v.map(w => `<td>${w}</td>`).reduce((prev, cur) => prev + cur)}</tr>`).reduce((prev, cur) => prev + cur)}
+          </table>
+        </div>
+      `;
+
     }
     catch (e) {
       return reject({ error: true, message: e });
+    }
+  }
+
+  get URL_MENU() {
+    return [
+      {
+        text: formatMessage({
+          id: 'bigData.crawlingURL.melon',
+          default: '(1) Melon chart',
+          description: 'choose url by using Melon chart'
+        }),
+        value: URL.MELON
+      },
+      {
+        text: formatMessage({
+          id: 'bigData.crawlingURL.instagram',
+          default: '(2) Instagram',
+          description: 'choose url by using instagram'
+        }),
+        value: URL.INSTAGRAM
+      },
+      {
+        text: formatMessage({
+          id: 'bigData.crawlingURL.daum',
+          default: '(3) Daum',
+          description: 'choose url by using daum'
+        }),
+        value: URL.DAUM
+      }
+    ];
+  }
+
+  crawlingURL(args, util) {
+    this._crawlingURL(args.URL, util);
+  }
+
+  _crawlingURL(url, util) {
+    this.crawling.url = url;
+  }
+
+  crawlingLogin(args, util) {
+    this._crawlingLogin(args.IDENTITY, args.PASSWORD, util);
+  }
+
+  _crawlingLogin(id, pwd, util) {
+    this.crawling.id = id;
+    this.crawling.pwd = pwd;
+  }
+
+  crawlingWord(args, util) {
+    this._crawlingWord(args.WORD, util);
+  }
+
+  _crawlingWord(word, util) {
+    this.crawling.word = word;
+  }
+
+  crawlingExecute(args, util) {
+    this._crawlingExecute(args.NUMBER, util);
+  }
+
+  _crawlingExecute(number, util) {
+    if ((this.crawling.url == undefined)) 
+      return alert('오류: 크롤링을 수행하기 위한 URL 정보가 설정되지 않았습니다.\n블록 위치: 크롤링 수행');
+
+    try {
+
+      const data = [];
+      switch (this.crawling.url) {
+        case 'melon':
+          (async () => {
+            const info = {};
+            const rank = parseInt(number);
+
+            const response = await axios('https://www.melon.com/chart/');
+            const $ = cheerio.load(response.data);
+
+            info.rank_change = [];
+            $('td > div.wrap > span.rank_wrap').map((i, e) => {
+              if (i < rank)
+                info.rank_change.push(e.attribs.title);
+            });
+          
+            info.title = [];
+            $('.ellipsis.rank01 > span > a').map((i, e) => {
+              if (i < rank)
+                info.title.push(e.firstChild.data);
+            });
+          
+            info.artist = [];
+            $('.checkEllipsis > a').map((i, e) => {
+              if (i < rank)
+                info.artist.push(e.firstChild.data);
+            });
+          
+            info.album = [];
+            $('.ellipsis.rank03> a').map((i, e) => {
+              if (i < rank)
+                info.album.push(e.firstChild.data);
+            });
+          
+            let up_to_date;
+            $('.year').map((i, e) => {
+              up_to_date = e.firstChild.data;
+            });
+          
+            let up_to_time;
+            $('.hhmm > span').map((i, e) => {
+              up_to_time = e.firstChild.data;
+            });
+          
+            data.push(['순위', '제목', '아티스트', '앨범', '순위변동', '날짜', '시간'])
+            for (let i = 0; i < rank; i++) {
+              data.push([i + 1, info.title[i], info.artist[i], info.album[i], info.rank_change[i].replace(/(\s*)/g, ''), up_to_date, up_to_time]);
+            }
+
+            downloadCSV(data);
+          })();
+          break;
+        case 'instagram':
+        case 'daum':
+      }
+    }
+    catch (e) {
+      return console.error(e);
     }
   }
 }

@@ -1686,11 +1686,6 @@ class Scratch3DeepLearningBlocks {
       <h1>${storage} 모델 학습 결과 그래프</h1>
       <svg class="ModelTrainedHistory" width="${document.body.children[4].children[0].children[4].offsetWidth * 0.65}" height="${document.body.children[4].children[0].children[4].offsetHeight * 0.625}"></svg>`;
 
-      // Styling
-      document.getElementsByClassName('ModelTrainedHistory')[0].style.position = 'absolute';
-      document.getElementsByClassName('ModelTrainedHistory')[0].style.top = '55%';
-      document.getElementsByClassName('ModelTrainedHistory')[0].style.transform = 'translate(-50%, -50%)';
-
       return drawHistory2Axies('ModelTrainedHistory', {
         data: 
         [
