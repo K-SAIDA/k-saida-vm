@@ -24,7 +24,7 @@ const SCALINGTYPE = {
   STANDARDIZATION: 'standardization', 
 }
 
-const URL = {
+const CRAWLINGSITE = {
   MELON:'melon',
   INSTAGRAM:'instagram',
   DAUM:'daum'
@@ -586,14 +586,14 @@ class Scratch3BigDataBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'bigData.crawlingURL',
-            default: 'set choose [URL]',
+            default: 'set choose [CRAWLINGSITE]',
             description: 'set choose url'
           }),
           arguments: {
-            URL: {
+            CRAWLINGSITE: {
               type: ArgumentType.STRING,
-              menu: 'URL',
-              defaultValue: URL.MELON
+              menu: 'CRAWLINGSITE',
+              defaultValue: CRAWLINGSITE.MELON
             },
           }
         },
@@ -650,7 +650,7 @@ class Scratch3BigDataBlocks {
       menus: {
         MISSINGVALUE: this.MISSINGVALUE_MENU,
         SCALINGTYPE: this.SCALINGTYPE_MENU,
-        URL:this.URL_MENU
+        CRAWLINGSITE:this.CRAWLINGSITE_MENU
       }
     };
   }
@@ -1535,7 +1535,7 @@ class Scratch3BigDataBlocks {
     }
   }
 
-  get URL_MENU() {
+  get CRAWLINGSITE_MENU() {
     return [
       {
         text: formatMessage({
@@ -1606,7 +1606,14 @@ class Scratch3BigDataBlocks {
             const info = {};
             const rank = parseInt(number);
 
-            const response = await axios('https://www.melon.com/chart/');
+            const response = await axios('https://cors-anywhere.herokuapp.com/www.melon.com/chart/', {
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Content-Length, X-Requested-With'
+              }
+            });
             const $ = cheerio.load(response.data);
 
             info.rank_change = [];
