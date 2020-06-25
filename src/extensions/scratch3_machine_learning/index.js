@@ -180,6 +180,40 @@ class Scratch3MachineLearningBlocks {
           }
         },
         {
+          opcode: 'getColumnOfArrayAtIndex',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'machineLearning.getColumnOfArrayAtIndex',
+            default: 'column of array [ARRAY] at index [INDEX]',
+            description: 'column of array at index'
+          }),
+          arguments: {
+            ARRAY: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            INDEX: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getColumnSizeOfArray',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'machineLearning.getColumnSizeOfArray',
+            default: 'column size of array [ARRAY]',
+            description: 'column size of array'
+          }),
+          arguments: {
+            ARRAY: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+          }
+        },
+        {
           opcode: 'createKNN',
           blockType: BlockType.COMMAND,
           text: formatMessage({
@@ -447,6 +481,34 @@ class Scratch3MachineLearningBlocks {
     } catch (e) {
       console.error(e);
       return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 행 크기');
+    }
+  }
+
+  getColumnOfArrayAtIndex(args, util) {
+    return this._getColumnOfArrayAtIndex(args.ARRAY, args.INDEX, util);
+  }
+
+  _getColumnOfArrayAtIndex(array, index, util) {
+    try {
+      const Array = (typeof array == 'string') ? array.split(' ').map(v => v.split(',').map(w => isNaN(parseFloat(w)) ? w : parseFloat(w))) : array;
+      return String((Array.length == 1 && Array[0].length == 1) ? Array[0][0] : Array[0][parseInt(index) - 1]);
+    } catch (e) {
+      console.error(e);
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 열 가져오기');
+    }
+  }
+
+  getColumnSizeOfArray(args, util) {
+    return this._getColumnSizeOfArray(args.ARRAY, util);
+  }
+
+  _getColumnSizeOfArray(array, util) {
+    try {
+      const Array = (typeof array == 'string') ? array.split(' ').map(v => v.split(',').map(w => parseFloat(w))) : array;
+      return String((Array.length == 1 && Array[0].length == 1) ? 1 : Array[0].length);
+    } catch (e) {
+      console.error(e);
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 열 크기');
     }
   }
 

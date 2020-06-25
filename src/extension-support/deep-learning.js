@@ -83,6 +83,13 @@ class TensorModel {
     this.model.add(tf.layers.flatten());
   }
 
+  addDropout(rates = '0.2') {
+    if (!this.model)
+      return new Error('해당 블록은 setSequential() 블록과 함께 사용되어야 합니다.');
+      
+    this.model.add(tf.layers.dropout(rates));
+  }
+
   setLosses(type = 'meanSquaredError') {
     if (!this.x_train || !this.y_train)
       return new Error('해당 블록은 settf.trainData(x_train, y_train, is_2d) 다음에 올 수 있습니다.');

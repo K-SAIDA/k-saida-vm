@@ -342,6 +342,25 @@ class Scratch3DeepLearningBlocks {
           }
         },
         {
+          opcode: 'addDropout',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'deepLearning.addDropout',
+            default: 'add [STORAGE] dropout with [RATES] to sequential',
+            description: 'add dropout to sequential'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            RATES: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
+        {
           opcode: 'setLosses',
           blockType: BlockType.COMMAND,
           text: formatMessage({
@@ -936,6 +955,23 @@ class Scratch3DeepLearningBlocks {
 
       this.model[storage].network.addFlatten();
       console.log('Add flatten:', storage, this.model[storage].network);
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  addDropout(args, util) {
+    this.promise(args.STORAGE, (reject) => this._addDropout(args.STORAGE, args.RATES, util, reject));
+  }
+
+  _addDropout(storage, rates, util, reject) {
+    try {
+      if (!this.model[storage])
+        return reject({ error: false, message: '오류: 모델이 존재하지 않습니다.\n블록 위치: 드롭아웃' });
+
+      this.model[storage].network.addDropout(parseFloat(rates));
+      console.log('Add Dropout:', storage, this.model[storage].network);
     }
     catch (e) {
       return reject({ error: true, message: e });

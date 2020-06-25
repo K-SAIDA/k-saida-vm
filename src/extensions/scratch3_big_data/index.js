@@ -516,6 +516,21 @@ class Scratch3BigDataBlocks {
             }
           }
         },
+        {
+          opcode: 'showViewer',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.showViewer',
+            default: 'show [STORAGE] on viewer',
+            description: 'show on viewer'
+          }),
+          arguments: {
+            STORAGE: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            }
+          }
+        },
       ],
       menus: {
         MISSINGVALUE: this.MISSINGVALUE_MENU,
@@ -1408,6 +1423,23 @@ class Scratch3BigDataBlocks {
         a.click()
         a.remove();
       }
+    }
+    catch (e) {
+      return reject({ error: true, message: e });
+    }
+  }
+
+  showViewer(args, util) {
+    return this.promise(args.STORAGE, (reject) => this._showViewer(args.STORAGE, util, reject));
+  }
+
+  _showViewer(storage, util, reject) {
+    try {
+      if (!this.data[storage])
+        return reject({ error: false, message: '오류: 시각화할 대상이 존재하지 않습니다.\n블록 위치: 시각화' });
+
+      document.body.children[4].children[0].children[4].style.display='flex';
+      document.body.children[4].children[0].children[4].children[0].children[1].innerHTML = `<h1>이곳에 시각화할 html 코드를 입력해주세요</h1>`;
     }
     catch (e) {
       return reject({ error: true, message: e });
