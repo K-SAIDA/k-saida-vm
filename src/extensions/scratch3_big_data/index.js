@@ -1565,7 +1565,7 @@ class Scratch3BigDataBlocks {
   }
 
   crawlingURL(args, util) {
-    this._crawlingURL(args.URL, util);
+    this._crawlingURL(args.CRAWLINGSITE, util);
   }
 
   _crawlingURL(url, util) {
