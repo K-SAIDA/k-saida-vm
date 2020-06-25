@@ -1543,7 +1543,7 @@ class Scratch3BigDataBlocks {
           default: '(1) Melon chart',
           description: 'choose url by using Melon chart'
         }),
-        value: URL.MELON
+        value: CRAWLINGSITE.MELON
       },
       {
         text: formatMessage({
@@ -1551,7 +1551,7 @@ class Scratch3BigDataBlocks {
           default: '(2) Instagram',
           description: 'choose url by using instagram'
         }),
-        value: URL.INSTAGRAM
+        value: CRAWLINGSITE.INSTAGRAM
       },
       {
         text: formatMessage({
@@ -1559,7 +1559,7 @@ class Scratch3BigDataBlocks {
           default: '(3) Daum',
           description: 'choose url by using daum'
         }),
-        value: URL.DAUM
+        value: CRAWLINGSITE.DAUM
       }
     ];
   }
