@@ -9,6 +9,11 @@ const { convertArrayToCSV } = require('convert-array-to-csv');
 
 const blockIconURI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAABmJLR0QA/wD/AP+gvaeTAAAEm0lEQVRIib2Wf2iVZRTHP+d57t3uvbtjzompTVg5liZRaj9UKhcMAkMixUGGyzKzkAhpahrC8Aet/FVIGSX0wxQbYpRGQSJY5soQDYwpS8Mfmy6d293u3f31vs/TH+9mbnuvGYYHDrzvc875fp/znuc954FbLJLLYBvQmcuRGVhbgeT26x+ExcrJvOE9e6Ua188lkCs2czn6BZZZvUA3LgKZS9FdEJ+dwzxY0puLZiM0/AcaP+TZ+Ytiu/6V0H5cFsp2dzUBZTdFCOeC+aGxsrC159pFNdDL6U7UYnUZVnOTOtpJZRdfN8OejaW3B5RzAojeZHZXIV1R48Kvtp7tW+h3aALYeqz2JZMR9yGFpQC4V/5EKZAhdwDgdLWg2o76hUW0ZQ1QcxWn7yGzoWwyYg7hd5AiJQTnHYD8Qm/bh7cS1EJw0nwAbCZOYmsl+elLfqRWDI8Ga88ehN4aWouIlXfFaBGjGah66jJMJkH7xokkj2xHUDiukDyynfaNE7GpbgJTakln1KBYMVpAv2PrPC4NsLJwzLNYtcjjH6iankSCnl+3UVBZS3hCNc75Y4AQfqAGVTCc7r0rcGOtpNtbEYSAGoQzygaLT6/6vuM3sXXjo07EOQmM8qkceub7UFKOsaCLRhLftw7nvFevQOkEolVLcGMXvNpeaia28yXCQSEUGFgZ2xYImYqAE+Z1rPYhAxk3HRlTSaZpH9a6IEJe+TTIZgDIK5+G23UR58LvIJr8sVXkj59B8vg3YNVA0tucpCwNYPVCPzKCIfS01zCdF8i2HMeNXSTT/BOFT67G/euUR3jnVLq/Wol1MuiiEQRG3k20agmZEwdIZlJ+pAsC4mr/Bmc0FkENGUVB1WIwhti2l+nY9AQmHQcg1bgTNbSUorlbQHk9xHS1IUaD0aTSIEYIBf7pL5Jde/8agTf8knR1iLjRIJqiFz9BDx0NQPLQDgDCU+d4flfOEftwHta44GaxmWQ/HK+mCgtrxdZVRt1g8iTW/9BIzQc48Q7ie95GRUsITa7Gpro9a6iQ1M8NmHg70RlLkUgxsa0vgB08XsJ5uq3ASoUAOKum1CDyqV+WMuIu1Pyt2FTCWwjmkzq8G4DQgzMhm+4lL6Bzy3M4LSf8YFBKni9Z88vHAt6P765+pBF4yM/ZTl+CvvdxYh8twiY6ML3kKlSAFBRTtOA90ke/I/5lvS8ZcGxYfuMkqcNcPS62rnKyAd/WZiNDUK9sQ0Jem00d9EZl6OFqz55O0Ll+Dqb7iu9+tZLHit/88QADwd26qs+wdq5fVHZkBZnocABM+3kvwxKvmZvONpxzTTmSszuGvfXDM31v/aaFyprlRgeewmc8BVtP4TrNJJ1rriotp6+N9uEiqY2sIJeXrN3fgtH1uYZqSAcJ67wbHsJCoL54w/4zOQkBVIz1GP3H/0B6pseJrxuEP3BBNn+bVkYv9xtTfRpWQSIqL6fdU7Vs9KbG5CD8wR/eE7NiVgPW+l71+iTluCQd42faXbJpzyw/Q857qTSrpynnc7Bjscp3Y2EdQFujHOv9XlaMFaWbIpF7voY919vrrZO/AWm1/5xPPIMCAAAAAElFTkSuQmCC';
 
+const MINMAX = {
+  MIN: 'min',
+  MAX: 'max', 
+}
+
 class Scratch3MachineLearningBlocks {
 
   static get EXTESNION_NAME() {
@@ -161,6 +166,30 @@ class Scratch3MachineLearningBlocks {
             INDEX: {
               type: ArgumentType.STRING,
               defaultValue: ' '
+            }
+          }
+        },
+        {
+          opcode: 'getMinMaxValueOfRowAtIndex',
+          blockType: BlockType.REPORTER,
+          text: formatMessage({
+            id: 'machineLearning.getMinMaxValueRowOfArrayAtIndex',
+            default: 'get [MINMAX] value of row [ARRAY] at index [INDEX]',
+            description: 'get value of row at index'
+          }),
+          arguments: {
+            ARRAY: {
+              type: ArgumentType.STRING,
+              defaultValue: ' ',
+            },
+            INDEX: {
+              type: ArgumentType.STRING,
+              defaultValue: ' '
+            },
+            MINMAX: {
+              type: ArgumentType.STRING,
+              menu: 'MINMAX',
+              defaultValue: MINMAX.MIN
             }
           }
         },
@@ -324,7 +353,9 @@ class Scratch3MachineLearningBlocks {
           }
         },
       ],
-      menus: {}
+      menus: {
+        MINMAX: this.MINMAX_MENU,
+      }
     };
   }
 
@@ -467,6 +498,48 @@ class Scratch3MachineLearningBlocks {
     } catch (e) {
       console.error(e);
       return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 행 가져오기');
+    }
+  }
+
+  get MINMAX_MENU() {
+    return [
+      {
+        text: formatMessage({
+          id: 'machineLearning.minmax.min',
+          default: '(1) MIN',
+          description: 'get min value of array'
+        }),
+        value: MINMAX.MIN
+      },
+      {
+        text: formatMessage({
+          id: 'machineLearning.minmax.max',
+          default: '(2) MAX',
+          description: 'get max value of array'
+        }),
+        value: MINMAX.MAX
+      },
+    ];
+  }
+
+  getMinMaxValueOfRowAtIndex(args, util) {
+    return this._getMinMaxValueOfRowAtIndex(args.ARRAY, args.INDEX, args.MINMAX, util);
+  }
+
+  _getMinMaxValueOfRowAtIndex(array, index, minmax, util) {
+    try {
+
+      const Array = (typeof array == 'string') ? array.split(' ').map(v => v.split(',').map(w => isNaN(parseFloat(w)) ? w : parseFloat(w))) : array;
+      switch (minmax) {
+        case 'min':
+          return String((Array.length == 1 && Array[0].length == 1) ? Array[0][0] : Math.min.apply(null, Array[parseInt(index) - 1]));
+        case 'max':
+          return String((Array.length == 1 && Array[0].length == 1) ? Array[0][0] : Math.max.apply(null, Array[parseInt(index) - 1]));
+      }
+
+    } catch (e) {
+      console.error(e);
+      return alert('오류: 입력 값이 잘못되었습니다.\n블록 위치: 행 최대값, 최소값 찾기');
     }
   }
 

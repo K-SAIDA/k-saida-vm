@@ -86,7 +86,7 @@ class TensorModel {
   addDropout(rates = '0.2') {
     if (!this.model)
       return new Error('해당 블록은 setSequential() 블록과 함께 사용되어야 합니다.');
-      
+
     this.model.add(tf.layers.dropout(rates));
   }
 

@@ -36,6 +36,7 @@
     "btoa": "1.2.1",
     "canvas-toBlob": "1.0.0",
     "convert-array-to-csv": "^2.0.0",
+    "d3": "^5.16.0",
     "decode-html": "2.0.0",
     "diff-match-patch": "1.0.4",
     "encoding": "^0.1.12",
