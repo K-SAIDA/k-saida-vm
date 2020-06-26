@@ -1544,7 +1544,7 @@ class Scratch3BigDataBlocks {
       {
         text: formatMessage({
           id: 'bigData.crawlingURL.daum',
-          default: '(2) Daum',
+          default: '(2) Daum news',
           description: 'choose url by using daum'
         }),
         value: CRAWLINGSITE.DAUM
