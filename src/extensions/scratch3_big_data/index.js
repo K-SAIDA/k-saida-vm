@@ -5,6 +5,7 @@ const timeFormatter = require('../../util/time-formatter');
 
 const { convertArrayToCSV } = require('convert-array-to-csv');
 const jimp = require('jimp');
+
 const cheerio = require('cheerio');
 const axios = require('axios');
 
@@ -26,7 +27,6 @@ const SCALINGTYPE = {
 
 const CRAWLINGSITE = {
   MELON:'melon',
-  INSTAGRAM:'instagram',
   DAUM:'daum'
 }
 
@@ -63,8 +63,7 @@ const T = (a) => {
   return t;
 }
 
-const downloadCSV = (data) => {
-  const filename = `big_data_${new Date().getTime()}.csv`;
+const downloadCSV = (filename, data) => {
   const csvFromArrayOfArrays  = convertArrayToCSV(data);
 
   // IE 10, 11, Edge Run
@@ -586,7 +585,7 @@ class Scratch3BigDataBlocks {
           blockType: BlockType.COMMAND,
           text: formatMessage({
             id: 'bigData.crawlingURL',
-            default: 'set choose [CRAWLINGSITE]',
+            default: 'set [STORAGE] choose [CRAWLINGSITE]',
             description: 'set choose url'
           }),
           arguments: {
@@ -595,25 +594,6 @@ class Scratch3BigDataBlocks {
               menu: 'CRAWLINGSITE',
               defaultValue: CRAWLINGSITE.MELON
             },
-          }
-        },
-        {
-          opcode: 'crawlingLogin',
-          blockType: BlockType.COMMAND,
-          text: formatMessage({
-            id: 'bigData.crawlingLogin',
-            default: 'enter [IDENTITY] [PASSWORD]',
-            description: 'enter id, pw'
-          }),
-          arguments: {
-            IDENTITY: {
-              type: ArgumentType.STRING,
-              defaultValue: ' '
-            },
-            PASSWORD: {
-              type: ArgumentType.STRING,
-              defaultValue: ' '
-            }
           }
         },
         {
@@ -642,7 +622,7 @@ class Scratch3BigDataBlocks {
           arguments: {
             NUMBER: {
               type: ArgumentType.STRING,
-              defaultValue:' '
+              defaultValue: ' '
             }
           }
         },
@@ -1254,7 +1234,7 @@ class Scratch3BigDataBlocks {
       if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: 저장할 데이터가 없습니다.\n블록 위치: CSV 저장' });
 
-      downloadCSV(this.data[storage]);
+      downloadCSV(`big_data_${new Date().getTime()}.csv`, this.data[storage]);
     }
     catch (e) {
       return reject({ error: true, message: e });
@@ -1547,14 +1527,6 @@ class Scratch3BigDataBlocks {
       },
       {
         text: formatMessage({
-          id: 'bigData.crawlingURL.instagram',
-          default: '(2) Instagram',
-          description: 'choose url by using instagram'
-        }),
-        value: CRAWLINGSITE.INSTAGRAM
-      },
-      {
-        text: formatMessage({
           id: 'bigData.crawlingURL.daum',
           default: '(3) Daum',
           description: 'choose url by using daum'
@@ -1597,15 +1569,20 @@ class Scratch3BigDataBlocks {
     if ((this.crawling.url == undefined)) 
       return alert('오류: 크롤링을 수행하기 위한 URL 정보가 설정되지 않았습니다.\n블록 위치: 크롤링 수행');
 
-    try {
+    (async () => {
+      try {
 
-      const data = [];
-      switch (this.crawling.url) {
-        case 'melon':
-          (async () => {
-            const info = {};
+        let filename = '';
+        const data = [];
+        const info = {};
+        switch (this.crawling.url) {
+          case 'melon':
+
+            document.body.children[4].children[0].children[3].style.display = 'flex';
+            document.body.children[4].children[0].children[3].children[0].children[1].innerText = '사전 작업 준비 중';
+            
+            filename = `big_data_crawling_melon_${new Date().getTime()}.csv`;
             const rank = parseInt(number);
-
             const response = await axios('https://cors-anywhere.herokuapp.com/www.melon.com/chart/', {
               headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -1616,55 +1593,130 @@ class Scratch3BigDataBlocks {
             });
             const $ = cheerio.load(response.data);
 
+            document.body.children[4].children[0].children[3].children[0].children[1].innerText = '데이터 가져오는 중';
+  
             info.rank_change = [];
             $('td > div.wrap > span.rank_wrap').map((i, e) => {
               if (i < rank)
                 info.rank_change.push(e.attribs.title);
             });
-          
+            
             info.title = [];
             $('.ellipsis.rank01 > span > a').map((i, e) => {
               if (i < rank)
                 info.title.push(e.firstChild.data);
             });
-          
+            
             info.artist = [];
             $('.checkEllipsis > a').map((i, e) => {
               if (i < rank)
                 info.artist.push(e.firstChild.data);
             });
-          
+            
             info.album = [];
             $('.ellipsis.rank03> a').map((i, e) => {
               if (i < rank)
                 info.album.push(e.firstChild.data);
             });
-          
+            
             let up_to_date;
             $('.year').map((i, e) => {
               up_to_date = e.firstChild.data;
             });
-          
+            
             let up_to_time;
             $('.hhmm > span').map((i, e) => {
               up_to_time = e.firstChild.data;
             });
-          
+
+            document.body.children[4].children[0].children[3].children[0].children[1].innerText = '데이터 처리 중';
+            
             data.push(['순위', '제목', '아티스트', '앨범', '순위변동', '날짜', '시간'])
             for (let i = 0; i < rank; i++) {
               data.push([i + 1, info.title[i], info.artist[i], info.album[i], info.rank_change[i].replace(/(\s*)/g, ''), up_to_date, up_to_time]);
             }
 
-            downloadCSV(data);
-          })();
-          break;
-        case 'instagram':
-        case 'daum':
+            break;
+          case 'daum':
+            if (this.crawling.word == undefined)
+              return alert('오류: 크롤링을 수행하기 위한 단어가 설정되지 않았습니다.\n블록 위치: 크롤링 수행');
+
+            document.body.children[4].children[0].children[3].style.display = 'flex';
+            document.body.children[4].children[0].children[3].children[0].children[1].innerText = '사전 작업 준비 중';
+            filename = `big_data_crawling_daum_${new Date().getTime()}.csv`;
+
+            info.title = [];
+            info.publisher = [];
+            info.content = [];
+
+            const limit = parseInt(number);
+            for (let i = 1; i <= limit; i++) {
+              const response = await axios('https://cors-anywhere.herokuapp.com/search.daum.net/search?nil_suggest=btn&w=news&DA=PGD&cluster=y&q=' + this.crawling.word + '&p=' + i, {
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
+                  'Access-Control-Allow-Headers': 'Content-Type, Authorization, Content-Length, X-Requested-With'
+                }
+              });
+              const $ = cheerio.load(response.data);
+
+              document.body.children[4].children[0].children[3].children[0].children[1].innerText = '데이터 가져오는 중';
+              $('#clusterResultUL').map((i, e) => {
+                e.children.map((children, j) => {
+                  if (children.name == 'li') {
+
+                    const warp_content = children.children[(children.children[3] == undefined) ? 1 : 3].children[1];
+                    
+                    // title
+                    info.title.push(warp_content.children[1].children[1].children.map((children, k) => {
+                      if (children.type == 'text')
+                        return children.data;
+                      
+                      if (children.type == 'tag')
+                        return children.children[0].data;
+            
+                      return '';
+                    }).reduce((prev, cur) => prev + cur));
+                    
+                    // publisher
+                    info.publisher.push(warp_content.children[3].children[2].data.trim());
+                    
+                    // content
+                    info.content.push(warp_content.children[5].children.map((children, k) => {
+                      if (children.type == 'text')
+                        return children.data;
+                      
+                      if (children.type == 'tag')
+                        return children.children[0].data;
+            
+                      return '';
+                    }).reduce((prev, cur) => prev + cur));
+                  }
+                })
+              });
+            }
+
+            document.body.children[4].children[0].children[3].children[0].children[1].innerText = '데이터 처리 중';
+            data.push(['제목', '신문사', '내용']);
+            for (let i = 0; i < limit * 10; i++) {
+              data.push([info.title[i], info.publisher[i], info.content[i]]);
+            }
+            break;
+        }
+
+        document.body.children[4].children[0].children[3].children[0].children[1].innerText = '.CSV 파일 다운로드 시작';
+        downloadCSV(filename, data);
+
+        document.body.children[4].children[0].children[3].style.display = 'none';
+        document.body.children[4].children[0].children[3].children[0].children[1].innerText = '작업을 처리하는 중';
       }
-    }
-    catch (e) {
-      return console.error(e);
-    }
+      catch (e) {
+        document.body.children[4].children[0].children[3].style.display = 'none';
+        document.body.children[4].children[0].children[3].children[0].children[1].innerText = '작업을 처리하는 중';
+        return console.error(e);
+      }
+    })();
   }
 }
 
