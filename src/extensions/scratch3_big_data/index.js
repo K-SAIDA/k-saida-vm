@@ -628,7 +628,7 @@ class Scratch3BigDataBlocks {
         },
         {
           opcode: 'getHeaderAtCrawlingURL',
-          blockType: BlockType.COMMAND,
+          blockType: BlockType.REPORTER,
           text: formatMessage({
             id: 'bigData.getHeaderAtCrawlingURL',
             default: 'get header at crawling url [CRAWLINGSITE]',
