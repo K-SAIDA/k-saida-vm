@@ -566,12 +566,12 @@ class Scratch3BigDataBlocks {
           }
         },
         {
-          opcode: 'showViewer',
+          opcode: 'showCSVOnViewer',
           blockType: BlockType.COMMAND,
           text: formatMessage({
-            id: 'bigData.showViewer',
-            default: 'show [STORAGE] on viewer',
-            description: 'show on viewer'
+            id: 'bigData.showCSVOnViewer',
+            default: 'show [STORAGE] csv on viewer',
+            description: 'show csv on viewer'
           }),
           arguments: {
             STORAGE: {
@@ -624,6 +624,22 @@ class Scratch3BigDataBlocks {
               type: ArgumentType.STRING,
               defaultValue: ' '
             }
+          }
+        },
+        {
+          opcode: 'getHeaderAtCrawlingURL',
+          blockType: BlockType.COMMAND,
+          text: formatMessage({
+            id: 'bigData.getHeaderAtCrawlingURL',
+            default: 'get header at crawling url [CRAWLINGSITE]',
+            description: 'get header at crawling url'
+          }),
+          arguments: {
+            CRAWLINGSITE: {
+              type: ArgumentType.STRING,
+              menu: 'CRAWLINGSITE',
+              defaultValue: CRAWLINGSITE.MELON
+            },
           }
         },
       ],
@@ -1487,11 +1503,11 @@ class Scratch3BigDataBlocks {
     }
   }
 
-  showViewer(args, util) {
-    return this.promise(args.STORAGE, (reject) => this._showViewer(args.STORAGE, util, reject));
+  showCSVOnViewer(args, util) {
+    return this.promise(args.STORAGE, (reject) => this._showCSVOnViewer(args.STORAGE, util, reject));
   }
 
-  _showViewer(storage, util, reject) {
+  _showCSVOnViewer(storage, util, reject) {
     try {
       if (!this.data[storage] || (this.type[storage] != 'csv'))
         return reject({ error: false, message: '오류: 시각화할 대상이 존재하지 않습니다.\n블록 위치: 시각화' });
@@ -1717,6 +1733,19 @@ class Scratch3BigDataBlocks {
         return console.error(e);
       }
     })();
+  }
+
+  getHeaderAtCrawlingURL(args, util) {
+    return this._getHeaderAtCrawlingURL(args.CRAWLINGSITE, util);
+  }
+
+  _getHeaderAtCrawlingURL(type, util) {
+    switch (type) {
+      case 'melon':
+        return '순위,제목,아티스트,앨범,순위변동,날짜,시간';
+      case 'daum':
+        return '제목,신문사,내용';
+    }
   }
 }
 
